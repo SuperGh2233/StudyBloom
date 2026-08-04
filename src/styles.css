@@ -6,6 +6,7 @@
   background: #f8f5f0;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
   --page: #f8f5f0;
   --surface: #fffdf9;
   --surface-soft: #f1eee7;
@@ -45,7 +46,16 @@ button:disabled { cursor: not-allowed; }
 
 .focus-ring:focus-visible { outline: 3px solid rgba(88, 122, 104, 0.28); outline-offset: 2px; }
 .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.pwa-safe-top { padding-top: env(safe-area-inset-top); }
+.pwa-top-banner { top: max(0.75rem, env(safe-area-inset-top)); }
+.pwa-update-banner { top: max(5.25rem, calc(4.5rem + env(safe-area-inset-top))); }
+.pwa-install-card { bottom: max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom))); }
 .calendar-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+@media (min-width: 768px) {
+  .pwa-top-banner, .pwa-update-banner { top: 1.5rem; }
+  .pwa-install-card { bottom: 1.5rem; }
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .gentle-enter { animation: gentle-enter 360ms cubic-bezier(.16,1,.3,1) both; }

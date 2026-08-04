@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">StudyBloom</title>
+  <desc id="desc">一片在日历中成长的嫩芽</desc>
+  <rect width="512" height="512" rx="112" fill="#3f6351"/>
+  <path d="M256 370V180" fill="none" stroke="#f8f5f0" stroke-linecap="round" stroke-width="24"/>
+  <path d="M256 270c-50-42-94-38-116-10 8 58 54 81 116 54" fill="#d9e8dc"/>
+  <path d="M256 224c38-54 82-68 119-50-3 60-45 94-119 78" fill="#b8d8c2"/>
+  <path d="M256 222c-15-45-2-78 25-102 36 31 35 73-25 102Z" fill="#e4eee7"/>
+  <circle cx="256" cy="144" r="13" fill="#f1c4c8"/>
+</svg>

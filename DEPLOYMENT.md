@@ -1,52 +1,68 @@
 # StudyBloom 部署说明
 
-## 推送到 GitHub
+## 1. GitHub
 
-1. 登录 [GitHub](https://github.com/)，创建名为 `study-bloom` 的空仓库。
-2. 不要勾选自动创建 README，当前项目已经包含文档。
-3. 在项目目录执行：
+确认没有 `.env`、`.env.local` 或其他真实密钥后推送：
 
 ```bash
-git init
 git add .
-git commit -m "feat: initialize StudyBloom"
-git branch -M main
-git remote add origin https://github.com/你的用户名/study-bloom.git
-git push -u origin main
+git commit -m "chore: update StudyBloom"
+git push origin main
 ```
 
-推送前确认 `.env` 和 `.env.local` 没有进入 `git status`。
+## 2. Supabase
 
-## 导入 Vercel
+1. 创建 Supabase 项目。
+2. 在 SQL Editor 执行 `supabase/schema.sql`。
+3. 在 Authentication → Sign In / Providers 中启用 Email。
+4. 在 Project Settings → API Keys 获取 Project URL 和 Publishable/anon key。
+5. 生产环境不要使用 `service_role` 或 Secret key。
 
-1. 登录 [Vercel](https://vercel.com/)。
-2. 点击 `Add New > Project`，授权 GitHub 后选择 `study-bloom`。
-3. Framework Preset 选择 `Vite`。
-4. Build Command 填写 `npm run build`。
-5. Output Directory 填写 `dist`。
-6. 在 Environment Variables 中配置：
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-7. 点击 Deploy。
+## 3. Vercel
 
-公开环境变量只能使用 anon key 或 publishable key，不能使用 `service_role`。
+导入 GitHub 仓库 `SuperGh2233/StudyBloom`，配置：
 
-## 配置 Supabase 正式地址
+- Framework Preset：Vite
+- Root Directory：`./`
+- Build Command：`npm run build`
+- Output Directory：`dist`
 
-1. 部署成功后复制 Vercel 正式域名。
-2. 打开 Supabase `Authentication > URL Configuration`。
-3. 将 Site URL 设置为正式域名。
-4. Redirect URLs 增加 `https://你的域名/reset-password`。
-5. 保留本地开发重置地址。
+环境变量需要设置在 Production、Preview、Development：
 
-## 路由刷新 404
+```text
+VITE_SUPABASE_URL
+VITE_SUPABASE_ANON_KEY
+```
 
-项目根目录的 `vercel.json` 已将全部路由回退到 `index.html`。如果刷新子页面仍出现 404，确认该文件已提交且最新部署包含它。
+修改环境变量或 PWA 配置后必须重新部署。
 
-## 构建日志与回滚
+## 4. Supabase 回调地址
 
-- 在 Vercel 项目 `Deployments` 中打开部署记录可查看 Build Logs。
-- 部署失败时先检查 Node 版本、环境变量名和 `npm run build` 输出。
-- 需要回滚时，在之前的成功部署右侧菜单选择 `Promote to Production`。
+部署成功后，在 Authentication → URL Configuration 设置：
 
-GitHub 登录、仓库创建、Vercel 授权、环境变量和正式域名配置必须由项目所有者手动完成。
+- Site URL：Vercel 正式域名
+- Redirect URL：`https://你的域名/reset-password`
+- 本地开发可保留：`http://localhost:5173/reset-password`
+
+## 5. 验证 PWA
+
+部署必须使用 HTTPS。打开正式域名后检查：
+
+1. 浏览器开发者工具 Application → Manifest 能读取 `StudyBloom`、`standalone` 和三个图标。
+2. Application → Service Workers 中出现已注册的 `sw.js`。
+3. Network 中没有图标 404。
+4. 刷新页面后 Service Worker 仍然存在。
+5. 断开网络后重新打开，能看到应用壳和离线状态提示。
+6. Supabase Auth、REST 和业务数据请求没有被列入缓存。
+
+## 6. 发布新版本
+
+推送到 `main` 后等待 Vercel 部署完成。用户打开旧版本时会看到“StudyBloom 有新版本可用”，点击“立即更新”才会刷新页面，不会在编辑任务时强制刷新。
+
+如果浏览器一直显示旧版本：
+
+1. 在开发者工具 Application → Service Workers 点击 Unregister。
+2. 清理该域名的站点数据和缓存。
+3. 重新打开 HTTPS 地址。
+
+不要把用户任务、Access Token 或 Refresh Token 放入 Service Worker 缓存。
