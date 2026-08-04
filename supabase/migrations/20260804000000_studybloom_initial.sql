@@ -47,6 +47,12 @@ create trigger tasks_set_updated_at
 before update on public.tasks
 for each row execute function public.set_updated_at();
 
+-- New tables are not exposed automatically. Grant only the authenticated role;
+-- row-level policies below still restrict every user to their own records.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on table public.plan_days, public.tasks to authenticated;
+revoke all on table public.plan_days, public.tasks from anon;
+
 alter table public.plan_days enable row level security;
 alter table public.tasks enable row level security;
 
