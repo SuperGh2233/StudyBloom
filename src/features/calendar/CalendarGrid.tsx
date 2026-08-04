@@ -25,7 +25,7 @@ export function CalendarGrid({ month, tasksByDate, planDaysByDate, selectedDate,
   return (
     <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
       <div className="calendar-grid grid border-b border-[var(--line)] bg-[var(--surface-soft)]">
-        {weekDays.map((day, index) => <div key={day} className={`py-2.5 text-center text-xs font-semibold ${index > 4 ? 'text-[var(--rose)]' : 'text-[var(--muted)]'}`}>周{day}</div>)}
+        {weekDays.map((day, index) => <div key={day} className={`py-3 text-center text-[11px] font-semibold tracking-wide sm:text-xs ${index > 4 ? 'text-[var(--rose)]' : 'text-[var(--muted)]'}`}>{day}</div>)}
       </div>
       <div className="calendar-grid grid">
         {days.map((date) => {
@@ -42,23 +42,23 @@ export function CalendarGrid({ month, tasksByDate, planDaysByDate, selectedDate,
               key={key}
               onClick={() => onSelect(key)}
               aria-label={`${format(date, 'M月d日 EEEE', { locale: zhCN })}，${dayTasks.length ? `完成 ${completed}/${dayTasks.length}` : '暂无任务'}`}
-              className={`focus-ring relative min-h-[82px] min-w-0 border-b border-r border-[var(--line)] p-1.5 text-left transition hover:bg-[var(--accent-soft)] sm:min-h-[120px] sm:p-2.5 ${muted ? 'opacity-45' : ''} ${selected ? 'bg-[var(--accent-soft)]' : ''}`}
+              className={`focus-ring relative min-h-[96px] min-w-0 border-b border-r border-[var(--line)] p-1.5 text-left transition hover:bg-[var(--accent-soft)] sm:min-h-[124px] sm:p-2.5 ${muted ? 'opacity-45' : ''} ${selected ? 'bg-[var(--accent-soft)] ring-1 ring-inset ring-[var(--accent)]' : ''}`}
             >
-              <div className="flex items-start justify-between gap-1">
-                <span className={`grid h-7 w-7 place-items-center rounded-lg text-xs font-bold sm:h-8 sm:w-8 sm:text-sm ${isToday(date) ? 'bg-[var(--accent-strong)] text-white' : 'text-[var(--ink)]'}`}>{date.getDate()}</span>
-                <span className={`mt-1 flex items-center gap-0.5 text-[10px] font-bold sm:text-xs ${allDone ? 'text-[var(--accent-strong)]' : 'text-[var(--muted)]'}`}>{allDone && <Check size={12} strokeWidth={2.5} />}{completed}/{dayTasks.length}</span>
+              <div className="flex items-start justify-between gap-0.5">
+                <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[11px] font-bold sm:h-8 sm:w-8 sm:text-sm ${isToday(date) ? 'bg-[var(--accent-strong)] text-white shadow-sm' : 'text-[var(--ink)]'}`}>{date.getDate()}</span>
+                <span className={`mt-0.5 inline-flex min-w-0 shrink-0 items-center gap-0.5 rounded-full px-1 py-1 text-[10px] font-bold leading-none sm:px-1.5 sm:text-xs ${allDone ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]' : 'bg-[var(--surface-soft)] text-[var(--muted)]'}`}>{allDone && <Check size={11} strokeWidth={2.5} />}{completed}/{dayTasks.length}</span>
               </div>
               {planDay?.isRestDay ? (
-                <span className="mt-2 flex items-center gap-1 truncate text-[10px] font-semibold text-[var(--rose)] sm:text-xs"><Moon size={11} />休息日</span>
+                <span className="mt-2 flex min-w-0 items-center gap-1 truncate text-[10px] font-semibold leading-4 text-[var(--rose)] sm:text-xs"><Moon size={11} className="shrink-0" /><span className="truncate">休息日</span></span>
               ) : (
-                <div className="mt-1.5 grid gap-0.5">
+                <div className="mt-2 grid min-w-0 gap-1">
                   {dayTasks.slice(0, 3).map((task) => (
-                    <span key={task.id} className={`truncate text-[9px] leading-4 sm:text-[11px] ${task.completed ? 'text-[var(--muted)] line-through' : 'text-[var(--ink)]'}`}>{task.title}</span>
+                    <span key={task.id} className={`block min-w-0 truncate text-[10px] leading-[1.35] sm:text-[11px] ${task.completed ? 'text-[var(--muted)] line-through' : 'text-[var(--ink)]'}`}>{task.title}</span>
                   ))}
-                  {dayTasks.length > 3 && <span className="text-[9px] font-semibold text-[var(--muted)] sm:text-[11px]">还有 {dayTasks.length - 3} 项</span>}
+                  {dayTasks.length > 3 && <span className="block truncate text-[10px] font-semibold leading-[1.35] text-[var(--muted)] sm:text-[11px]">还有 {dayTasks.length - 3} 项</span>}
                 </div>
               )}
-              {planDay?.note && <MessageCircle className="absolute bottom-1.5 right-1.5 text-[var(--rose)]" size={12} aria-label="有备注" />}
+              {planDay?.note && <MessageCircle className="absolute bottom-2 right-2 text-[var(--rose)]" size={13} aria-label="有备注" />}
             </button>
           )
         })}
