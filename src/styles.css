@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  font-family: "Segoe UI Variable", "Microsoft YaHei UI", "PingFang SC", sans-serif;
+  color: #28372f;
+  background: #f8f5f0;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --page: #f8f5f0;
+  --surface: #fffdf9;
+  --surface-soft: #f1eee7;
+  --ink: #28372f;
+  --muted: #657168;
+  --line: #dedfd7;
+  --accent: #587a68;
+  --accent-strong: #3f6351;
+  --accent-soft: #e4eee7;
+  --rose: #b66e76;
+  --rose-soft: #f7e8e8;
+  --shadow: 0 18px 50px rgba(63, 99, 81, 0.1);
+}
+
+* { box-sizing: border-box; }
+
+html { min-width: 320px; background: var(--page); }
+body { margin: 0; min-width: 320px; min-height: 100dvh; overflow-x: hidden; background: var(--page); color: var(--ink); }
+button, input, textarea, select { font: inherit; }
+button, a, input[type="checkbox"] { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+::selection { background: #d9e8dc; color: #24342b; }
+
+.app-background {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(240, 208, 211, 0.28), transparent 28rem),
+    radial-gradient(circle at 95% 12%, rgba(188, 216, 197, 0.34), transparent 30rem),
+    var(--page);
+}
+
+.surface {
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.focus-ring:focus-visible { outline: 3px solid rgba(88, 122, 104, 0.28); outline-offset: 2px; }
+.safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.calendar-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .gentle-enter { animation: gentle-enter 360ms cubic-bezier(.16,1,.3,1) both; }
+  .drawer-enter { animation: drawer-enter 260ms cubic-bezier(.16,1,.3,1) both; }
+}
+
+@keyframes gentle-enter { from { opacity: 0; transform: translateY(8px); } }
+@keyframes drawer-enter { from { opacity: 0; transform: translateY(18px); } }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #e7eee9;
+    background: #18231d;
+    --page: #18231d;
+    --surface: #202d25;
+    --surface-soft: #29372f;
+    --ink: #e7eee9;
+    --muted: #b0beb5;
+    --line: #3c4b42;
+    --accent: #9fc5ad;
+    --accent-strong: #b8d8c2;
+    --accent-soft: #30463a;
+    --rose: #e0a5aa;
+    --rose-soft: #4b3033;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.24);
+  }
+  .app-background {
+    background:
+      radial-gradient(circle at 8% 0%, rgba(126, 75, 83, 0.18), transparent 28rem),
+      radial-gradient(circle at 95% 12%, rgba(82, 123, 95, 0.2), transparent 30rem),
+      var(--page);
+  }
+}
