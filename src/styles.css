@@ -47,10 +47,26 @@ button:disabled { cursor: not-allowed; }
 .focus-ring:focus-visible { outline: 3px solid rgba(88, 122, 104, 0.28); outline-offset: 2px; }
 .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 .pwa-safe-top { padding-top: env(safe-area-inset-top); }
+.pwa-safe-inline { padding-left: max(0.75rem, env(safe-area-inset-left)); padding-right: max(0.75rem, env(safe-area-inset-right)); }
+.pwa-keyboard-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom), var(--keyboard-inset, 0px)); }
+.pwa-sticky-footer { padding-bottom: max(0.75rem, env(safe-area-inset-bottom), var(--keyboard-inset, 0px)); }
 .pwa-top-banner { top: max(0.75rem, env(safe-area-inset-top)); }
 .pwa-update-banner { top: max(5.25rem, calc(4.5rem + env(safe-area-inset-top))); }
 .pwa-install-card { bottom: max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom))); }
 .calendar-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.calendar-grid, .calendar-grid > * { min-width: 0; }
+.calendar-day-cell, .calendar-task { min-width: 0; max-width: 100%; overflow: hidden; }
+.calendar-task { overflow-wrap: anywhere; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-task-list, .calendar-cell-head { min-width: 0; max-width: 100%; }
+
+@media (max-width: 767px) {
+  .calendar-day-cell { contain: layout paint; }
+  .calendar-task-secondary { display: none; }
+}
+
+@media (min-width: 640px) {
+  .pwa-safe-inline { padding-left: max(1.5rem, env(safe-area-inset-left)); padding-right: max(1.5rem, env(safe-area-inset-right)); }
+}
 
 @media (min-width: 768px) {
   .pwa-top-banner, .pwa-update-banner { top: 1.5rem; }

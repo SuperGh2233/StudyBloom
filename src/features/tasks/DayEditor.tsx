@@ -44,6 +44,23 @@ export function DayEditor(props: DayEditorProps) {
     document.body.style.overflow = 'hidden'
     return () => { document.removeEventListener('keydown', onKeyDown); document.body.style.overflow = '' }
   }, [open, busy, onClose])
+  useEffect(() => {
+    if (!open || !window.visualViewport) return
+    const viewport = window.visualViewport
+    const updateKeyboardInset = () => {
+      const visibleBottom = viewport.height + viewport.offsetTop
+      const inset = Math.max(0, window.innerHeight - visibleBottom)
+      document.documentElement.style.setProperty('--keyboard-inset', `${inset}px`)
+    }
+    updateKeyboardInset()
+    viewport.addEventListener('resize', updateKeyboardInset)
+    viewport.addEventListener('scroll', updateKeyboardInset)
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardInset)
+      viewport.removeEventListener('scroll', updateKeyboardInset)
+      document.documentElement.style.removeProperty('--keyboard-inset')
+    }
+  }, [open])
   if (!open) return null
 
   const run = async (key: string, action: () => Promise<unknown>, success?: string) => {
@@ -69,52 +86,52 @@ export function DayEditor(props: DayEditorProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-[#17231dcc] md:items-center md:justify-center md:px-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose() }}>
-      <section className="surface drawer-enter safe-bottom flex max-h-[92dvh] w-full flex-col rounded-t-2xl md:max-w-2xl md:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="day-editor-title">
-        <header className="flex items-center gap-3 border-b border-[var(--line)] px-4 py-4 sm:px-6">
+    <div className="fixed inset-0 z-50 flex items-end overflow-x-hidden bg-[#17231dcc] md:items-center md:justify-center md:px-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose() }}>
+      <section className="surface drawer-enter safe-bottom pwa-keyboard-safe flex max-h-[92dvh] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl md:max-w-2xl md:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="day-editor-title">
+        <header className="flex min-w-0 items-center gap-3 border-b border-[var(--line)] px-4 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
             <h2 id="day-editor-title" className="truncate text-lg font-bold">{title}</h2>
             <p className="mt-0.5 text-xs text-[var(--muted)]">{tasks.filter((task) => task.completed).length}/{tasks.length} 项已完成</p>
           </div>
-          <button className="focus-ring grid h-11 w-11 place-items-center rounded-xl text-[var(--muted)] hover:bg-[var(--surface-soft)]" onClick={onClose} aria-label="关闭计划编辑"><X size={20} /></button>
+          <button className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[var(--muted)] hover:bg-[var(--surface-soft)]" onClick={onClose} aria-label="关闭计划编辑"><X size={20} /></button>
         </header>
 
-        <div className="overflow-y-auto px-4 py-5 sm:px-6">
-          <div className="mb-5 flex items-center justify-between gap-3 rounded-xl bg-[var(--surface-soft)] p-3">
-            <div className="flex items-center gap-2 text-sm font-semibold"><Moon size={18} className="text-[var(--rose)]" />设为休息日</div>
+        <div className="min-h-0 min-w-0 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6">
+          <div className="mb-5 flex min-w-0 items-center justify-between gap-3 rounded-xl bg-[var(--surface-soft)] p-3">
+            <div className="flex min-w-0 items-center gap-2 text-sm font-semibold"><Moon size={18} className="shrink-0 text-[var(--rose)]" />设为休息日</div>
             <button
               type="button"
               role="switch"
               aria-checked={Boolean(planDay?.isRestDay)}
-              className={`focus-ring relative h-8 w-14 rounded-full transition ${planDay?.isRestDay ? 'bg-[var(--accent-strong)]' : 'bg-[var(--line)]'}`}
+              className={`focus-ring relative h-8 w-14 shrink-0 rounded-full transition ${planDay?.isRestDay ? 'bg-[var(--accent-strong)]' : 'bg-[var(--line)]'}`}
               onClick={() => run('rest', () => props.onSavePlanDay(date, { isRestDay: !planDay?.isRestDay }), planDay?.isRestDay ? '已取消休息日' : '已设为休息日')}
               disabled={Boolean(busy)}
             ><span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${planDay?.isRestDay ? 'left-7' : 'left-1'}`} /></button>
           </div>
           {planDay?.isRestDay && tasks.length > 0 && <p className="mb-4 rounded-xl bg-[var(--rose-soft)] px-4 py-3 text-sm leading-6 text-[var(--rose)]">休息日也可以保留轻量计划，记得给自己留出休息时间。</p>}
 
-          <form className="mb-5 flex gap-2" onSubmit={addTask}>
+          <form className="mb-5 flex min-w-0 gap-2" onSubmit={addTask}>
             <div className="min-w-0 flex-1"><Input label="新增任务" name="new-task" value={newTask} onChange={(event) => setNewTask(event.target.value)} placeholder="例如：复习英语单词" maxLength={100} /></div>
             <Button className="mt-[28px] shrink-0 px-3 sm:px-4" type="submit" loading={busy === 'add'} icon={<Plus size={18} />} aria-label="添加任务"><span className="hidden sm:inline">添加</span></Button>
           </form>
 
-          <div className="grid gap-2" aria-label="当天任务">
+          <div className="grid min-w-0 gap-2" aria-label="当天任务">
             {tasks.length === 0 ? (
               <div className="rounded-xl border border-dashed border-[var(--line)] px-4 py-8 text-center text-sm text-[var(--muted)]">今天还没有任务，写下一件准备完成的小事吧。</div>
             ) : tasks.map((task, index) => (
-              <div key={task.id} className="flex min-w-0 items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2">
+              <div key={task.id} className="flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2">
                 <button className={`focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition ${task.completed ? 'border-[var(--accent-strong)] bg-[var(--accent-strong)] text-white' : 'border-[var(--line)] text-transparent'}`} onClick={() => run(`toggle-${task.id}`, () => props.onToggle(task.id, !task.completed))} aria-label={task.completed ? `取消完成 ${task.title}` : `完成 ${task.title}`}><Check size={19} /></button>
                 <input
-                  className={`focus-ring min-w-0 flex-1 rounded-lg bg-transparent px-2 py-2 text-sm ${task.completed ? 'text-[var(--muted)] line-through' : ''}`}
+                  className={`focus-ring min-w-0 flex-1 rounded-lg bg-transparent px-1 py-2 text-base sm:px-2 sm:text-sm ${task.completed ? 'text-[var(--muted)] line-through' : ''}`}
                   defaultValue={task.title}
                   maxLength={100}
                   aria-label="任务名称"
                   onBlur={(event) => { const value = event.target.value.trim(); if (value && value !== task.title) void run(`edit-${task.id}`, () => props.onUpdate(task.id, value), '任务已更新'); else event.target.value = task.title }}
                 />
                 <div className="flex shrink-0">
-                  <button className="focus-ring grid h-10 w-9 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25" disabled={index === 0 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, -1))} aria-label="上移任务"><ArrowUp size={17} /></button>
-                  <button className="focus-ring grid h-10 w-9 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25" disabled={index === tasks.length - 1 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, 1))} aria-label="下移任务"><ArrowDown size={17} /></button>
-                  <button className="focus-ring grid h-10 w-9 place-items-center rounded-lg text-[var(--rose)]" onClick={() => setDeleteId(task.id)} aria-label={`删除 ${task.title}`}><Trash2 size={17} /></button>
+                  <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25 sm:w-9" disabled={index === 0 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, -1))} aria-label="上移任务"><ArrowUp size={17} /></button>
+                  <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25 sm:w-9" disabled={index === tasks.length - 1 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, 1))} aria-label="下移任务"><ArrowDown size={17} /></button>
+                  <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--rose)] sm:w-9" onClick={() => setDeleteId(task.id)} aria-label={`删除 ${task.title}`}><Trash2 size={17} /></button>
                 </div>
               </div>
             ))}
@@ -122,7 +139,9 @@ export function DayEditor(props: DayEditorProps) {
 
           <div className="mt-6 grid gap-3">
             <Textarea label="当天备注" value={note} onChange={(event) => setNote(event.target.value)} placeholder="记录今天的重点、心情或需要调整的地方" maxLength={1000} hint={`${note.length}/1000`} />
-            <Button variant="secondary" className="justify-self-end" loading={busy === 'note'} icon={<Save size={17} />} onClick={() => run('note', () => props.onSavePlanDay(date, { note }), '备注已保存')}>保存备注</Button>
+            <div className="pwa-sticky-footer sticky bottom-0 z-10 -mx-4 border-t border-[var(--line)] bg-[var(--surface)] px-4 pt-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pt-0">
+              <Button variant="secondary" className="w-full sm:w-auto sm:justify-self-end" loading={busy === 'note'} icon={<Save size={17} />} onClick={() => run('note', () => props.onSavePlanDay(date, { note }), '备注已保存')}>保存备注</Button>
+            </div>
           </div>
 
           <div className="mt-7 border-t border-[var(--line)] pt-5">
