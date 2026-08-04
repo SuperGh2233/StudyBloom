@@ -1,4 +1,4 @@
-import { Check, MessageCircle, Moon } from 'lucide-react'
+import { Check, MessageCircle, Moon, Square, SquareCheck } from 'lucide-react'
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday, startOfMonth, startOfWeek } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import type { PlanDay, Task } from '../../types'
@@ -57,7 +57,7 @@ export function CalendarGrid({ month, tasksByDate, planDaysByDate, selectedDate,
                 <span className="calendar-rest-day mt-2 flex min-w-0 items-center gap-1 truncate text-[10px] font-semibold leading-4 text-[var(--rose)] sm:text-xs"><Moon size={11} className="shrink-0" /><span className="truncate"><span className="sm:hidden">休</span><span className="hidden sm:inline">休息日</span></span></span>
               ) : hasTasks ? (
                 <div className="calendar-task-list mt-1.5 grid min-w-0 gap-0.5 sm:mt-2 sm:gap-1">
-                  {dayTasks.slice(0, 3).map((task, index) => <span key={task.id} className={`calendar-task block min-w-0 truncate text-[10px] leading-[1.35] sm:text-[11px] ${index > 0 ? 'calendar-task-secondary' : ''} ${task.completed ? 'text-[var(--muted)] line-through' : 'text-[var(--ink)]'}`}>{task.title}</span>)}
+                  {dayTasks.slice(0, 3).map((task, index) => <span key={task.id} className={`calendar-task flex min-w-0 items-center gap-0.5 text-[10px] leading-[1.35] sm:text-[11px] ${index > 0 ? 'calendar-task-secondary' : ''} ${task.completed ? 'text-[var(--muted)] line-through' : 'text-[var(--ink)]'}`}>{task.completed ? <SquareCheck className="shrink-0 text-[var(--accent-strong)]" size={11} strokeWidth={2.5} aria-hidden="true" /> : <Square className="shrink-0 text-[var(--line)]" size={10} strokeWidth={2} aria-hidden="true" />}<span className="min-w-0 truncate">{task.title}</span></span>)}
                   {dayTasks.length > 1 && <span className="calendar-task-more block truncate text-[10px] font-semibold leading-[1.35] text-[var(--muted)] sm:hidden">+{dayTasks.length - 1}</span>}
                   {dayTasks.length > 3 && <span className="calendar-task-desktop-more hidden truncate text-[11px] font-semibold leading-[1.35] text-[var(--muted)] sm:block">还有 {dayTasks.length - 3} 项</span>}
                 </div>

@@ -1,6 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { ArrowDown, ArrowUp, CalendarPlus, Check, ClipboardCopy, Moon, Plus, Save, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CalendarPlus, ClipboardCopy, Moon, Plus, Save, Square, SquareCheck, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import type { CopyMode, PlanDay, Task } from '../../types'
 import { Button } from '../../components/Button'
@@ -120,7 +120,7 @@ export function DayEditor(props: DayEditorProps) {
               <div className="rounded-xl border border-dashed border-[var(--line)] px-4 py-8 text-center text-sm text-[var(--muted)]">今天还没有任务，写下一件准备完成的小事吧。</div>
             ) : tasks.map((task, index) => (
               <div key={task.id} className="flex min-w-0 items-center gap-2 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface)] p-2">
-                <button className={`focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition ${task.completed ? 'border-[var(--accent-strong)] bg-[var(--accent-strong)] text-white' : 'border-[var(--line)] text-transparent'}`} onClick={() => run(`toggle-${task.id}`, () => props.onToggle(task.id, !task.completed))} aria-label={task.completed ? `取消完成 ${task.title}` : `完成 ${task.title}`}><Check size={19} /></button>
+                <button className={`focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition ${task.completed ? 'border-[var(--accent-strong)] bg-[var(--accent-soft)] text-[var(--accent-strong)]' : 'border-[var(--line)] text-[var(--muted)]'}`} onClick={() => run(`toggle-${task.id}`, () => props.onToggle(task.id, !task.completed))} aria-pressed={task.completed} aria-label={task.completed ? `取消完成 ${task.title}` : `完成 ${task.title}`}>{task.completed ? <SquareCheck size={20} strokeWidth={2.5} /> : <Square size={20} strokeWidth={1.8} />}</button>
                 <input
                   className={`focus-ring min-w-0 flex-1 rounded-lg bg-transparent px-1 py-2 text-base sm:px-2 sm:text-sm ${task.completed ? 'text-[var(--muted)] line-through' : ''}`}
                   defaultValue={task.title}
