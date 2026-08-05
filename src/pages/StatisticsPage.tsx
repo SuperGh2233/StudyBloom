@@ -75,7 +75,7 @@ export function StatisticsPage() {
               <div className="mt-5 grid grid-cols-7 gap-1.5 sm:gap-3">
                 {lastSeven.map(({ date, data }) => {
                   const rate = data?.taskCount ? Math.round((data.completedTaskCount / data.taskCount) * 100) : 0
-                  return <div key={date.toISOString()} className="grid justify-items-center gap-2 text-center"><span className={`grid h-9 w-9 place-items-center rounded-xl text-xs font-bold sm:h-11 sm:w-11 ${data?.checkedIn ? 'bg-[var(--accent-strong)] text-white' : data?.isRestDay ? 'bg-[var(--rose-soft)] text-[var(--rose)]' : 'bg-[var(--surface-soft)] text-[var(--muted)]'}`}>{data?.isRestDay ? '休' : data?.taskCount ? `${rate}%` : '无'}</span><span className="text-[10px] text-[var(--muted)] sm:text-xs">{format(date, 'EEE', { locale: zhCN })}</span></div>
+                  return <div key={date.toISOString()} className="grid min-w-0 justify-items-center gap-2 text-center"><span className={`grid h-9 w-full min-w-0 place-items-center rounded-xl text-[10px] font-bold sm:h-11 sm:text-xs ${data?.checkedIn ? 'bg-[var(--accent-strong)] text-white' : data?.isRestDay ? 'bg-[var(--rose-soft)] text-[var(--rose)]' : 'bg-[var(--surface-soft)] text-[var(--muted)]'}`}>{data?.isRestDay ? '休' : data?.taskCount ? `${rate}%` : '无'}</span><span className="text-[10px] text-[var(--muted)] sm:text-xs">{format(date, 'EEE', { locale: zhCN })}</span></div>
                 })}
               </div>
             </div>

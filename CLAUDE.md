@@ -26,7 +26,7 @@ StudyBloom：个人学习计划日历 PWA。前端 React 19 + Vite + TypeScript 
 - **`src/services/`**：Supabase 返回 snake_case 行，在 service 内映射为 camelCase 领域类型（见 `tasks.ts` 的 `mapTask`）。所有异常经 `utils/errorMessage.ts` 的 `toAppError`/`AppError` 包装成中文错误消息。虽然 RLS 已隔离数据，所有查询仍显式 `.eq('user_id', user.id)`（纵深防御，勿删）。
 - **`src/lib/supabase.ts`**：客户端**可为 null**（环境变量缺失时应用仍渲染，AuthContext 暴露 `configured` 标志）；需要客户端时用 `getSupabase()`，它抛 `CONFIG_MISSING`。
 - **`src/hooks/useMonthPlans.ts`**：日历页的核心状态 hook——按月加载 tasks + plan_days，所有写操作是**乐观更新 + 失败回滚**（`setTasks(previous)` 后 rethrow），保持这个模式。
-- **日历页双布局**：`<1024px` 用 `CalendarGrid`（紧凑卡片），`≥1024px` 用 `DesktopCalendar`（星期标题 + 每周"日期行 + 任务行"的海报表格）。两者共享 `useMonthPlans` 数据与 `DayEditor`，改数据流时两个组件都要检查。
+- **日历页双布局**：`<1024px` 用 `MobileCalendarView`（纯状态精简月历选日期 + 下方当日任务列表），`≥1024px` 用 `DesktopCalendar`（星期标题 + 每周"日期行 + 任务行"的海报表格）。两者共享 `useMonthPlans` 数据与 `DayEditor`（移动端同时充当底部抽屉），改数据流时两个组件都要检查。CalendarPage 中 `selectedDate`（选中日）与 `editorOpen`（抽屉开关）是分离的两个状态。
 - **认证**：`features/auth/AuthContext.tsx` 提供 `useAuth`；`RouteGuards.tsx` 的 `ProtectedRoute`/`PublicOnlyRoute` 守卫路由。`/reset-password` 必须保持公开路由（Supabase 重置邮件的回调目标）。
 
 **数据模型**（`supabase/schema.sql` 是权威脚本，在 Supabase SQL Editor 手工执行；`migrations/` 是镜像）：`plan_days`（每用户每天一行：休息日 + 备注，`unique(user_id, plan_date)`）+ `tasks`（title/completed/sort_order）。RLS 策略逐操作限定 `auth.uid() = user_id`；`anon` 角色无任何表权限。新增表必须补 RLS 策略和 grants。

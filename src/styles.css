@@ -56,14 +56,6 @@ button:disabled { cursor: not-allowed; }
 .pwa-install-card { bottom: max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom))); }
 .calendar-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .calendar-grid, .calendar-grid > * { min-width: 0; }
-.calendar-day-cell, .calendar-task { min-width: 0; max-width: 100%; overflow: hidden; }
-.calendar-task { overflow-wrap: anywhere; text-overflow: ellipsis; white-space: nowrap; }
-.calendar-task-list, .calendar-cell-head { min-width: 0; max-width: 100%; }
-
-@media (max-width: 767px) {
-  .calendar-day-cell { contain: layout paint; }
-  .calendar-task-secondary { display: none; }
-}
 
 @media (min-width: 640px) {
   .pwa-safe-inline { padding-left: max(1.5rem, env(safe-area-inset-left)); padding-right: max(1.5rem, env(safe-area-inset-right)); }

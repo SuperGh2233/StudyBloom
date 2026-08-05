@@ -87,11 +87,11 @@ export function DayEditor(props: DayEditorProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-end overflow-x-hidden bg-[#17231dcc] md:items-center md:justify-center md:px-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose() }}>
-      <section className="surface drawer-enter safe-bottom pwa-keyboard-safe flex max-h-[92dvh] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl md:max-w-2xl md:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="day-editor-title">
+      <section className="surface drawer-enter safe-bottom pwa-keyboard-safe flex max-h-[85dvh] w-full min-w-0 flex-col overflow-hidden rounded-t-2xl md:max-w-2xl md:rounded-2xl" role="dialog" aria-modal="true" aria-labelledby="day-editor-title">
         <header className="flex min-w-0 items-center gap-3 border-b border-[var(--line)] px-4 py-4 sm:px-6">
           <div className="min-w-0 flex-1">
             <h2 id="day-editor-title" className="truncate text-lg font-bold">{title}</h2>
-            <p className="mt-0.5 text-xs text-[var(--muted)]">{tasks.filter((task) => task.completed).length}/{tasks.length} 项已完成</p>
+            <p className="mt-0.5 text-xs text-[var(--muted)]">{tasks.length ? `${tasks.filter((task) => task.completed).length}/${tasks.length} 项已完成` : '暂无任务'}</p>
           </div>
           <button className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[var(--muted)] hover:bg-[var(--surface-soft)]" onClick={onClose} aria-label="关闭计划编辑"><X size={20} /></button>
         </header>

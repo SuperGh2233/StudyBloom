@@ -38,7 +38,7 @@ export function AppShell() {
           <nav className="hidden items-center gap-1 md:flex" aria-label="主导航">
             {items.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => `focus-ring flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition ${isActive ? 'bg-[var(--accent-soft)] text-[var(--accent-strong)]' : 'text-[var(--muted)] hover:bg-[var(--surface-soft)]'}`}><Icon size={18} strokeWidth={1.8} />{label}</NavLink>)}
           </nav>
-          <button onClick={handleSignOut} className="focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[var(--muted)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--ink)]" aria-label="退出登录"><LogOut size={19} strokeWidth={1.8} /></button>
+          <button onClick={handleSignOut} className="focus-ring hidden h-11 w-11 shrink-0 place-items-center rounded-xl text-[var(--muted)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--ink)] md:grid" aria-label="退出登录"><LogOut size={19} strokeWidth={1.8} /></button>
         </div>
       </header>
 
