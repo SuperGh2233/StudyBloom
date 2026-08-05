@@ -13,6 +13,7 @@
   --ink: #28372f;
   --muted: #657168;
   --line: #dedfd7;
+  --line-strong: #c3cec2;
   --accent: #587a68;
   --accent-strong: #3f6351;
   --accent-soft: #e4eee7;
@@ -91,6 +92,7 @@ button:disabled { cursor: not-allowed; }
     --ink: #e7eee9;
     --muted: #b0beb5;
     --line: #3c4b42;
+    --line-strong: #51655a;
     --accent: #9fc5ad;
     --accent-strong: #b8d8c2;
     --accent-soft: #30463a;

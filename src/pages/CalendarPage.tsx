@@ -4,15 +4,20 @@ import { ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Button } from '../components/Button'
 import { EmptyState } from '../components/EmptyState'
+import { useToast } from '../components/ToastProvider'
 import { CalendarGrid } from '../features/calendar/CalendarGrid'
+import { DesktopCalendar } from '../features/calendar/DesktopCalendar'
 import { DayEditor } from '../features/tasks/DayEditor'
 import { useMonthPlans } from '../hooks/useMonthPlans'
 import { todayDateKey } from '../utils/date'
+import { getErrorMessage } from '../utils/errorMessage'
 
 export function CalendarPage() {
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
   const [selectedDate, setSelectedDate] = useState('')
   const data = useMonthPlans(month)
+  const { showToast } = useToast()
+  const toggleFromCalendar = (id: string, completed: boolean) => data.toggleTask(id, completed).catch((error) => { showToast(getErrorMessage(error, '更新任务失败'), 'error') })
   const completed = useMemo(() => data.tasks.filter((task) => task.completed).length, [data.tasks])
   const rate = data.tasks.length ? Math.round((completed / data.tasks.length) * 100) : 0
   const selectedTasks = selectedDate ? data.tasksByDate.get(selectedDate) ?? [] : []
@@ -39,7 +44,12 @@ export function CalendarPage() {
 
       <div className="relative min-w-0">
         {data.loading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--surface)_72%,transparent)] backdrop-blur-[2px]" role="status"><span className="rounded-xl bg-[var(--surface)] px-4 py-3 text-sm font-semibold shadow">正在加载本月计划...</span></div>}
-        <CalendarGrid month={month} tasksByDate={data.tasksByDate} planDaysByDate={data.planDaysByDate} selectedDate={selectedDate} onSelect={setSelectedDate} />
+        <div className="lg:hidden">
+          <CalendarGrid month={month} tasksByDate={data.tasksByDate} planDaysByDate={data.planDaysByDate} selectedDate={selectedDate} onSelect={setSelectedDate} />
+        </div>
+        <div className="hidden lg:block">
+          <DesktopCalendar month={month} tasksByDate={data.tasksByDate} planDaysByDate={data.planDaysByDate} selectedDate={selectedDate} onSelect={setSelectedDate} onToggle={toggleFromCalendar} />
+        </div>
       </div>
 
       {!data.loading && !data.error && data.tasks.length === 0 && data.planDays.length === 0 && <div className="mt-4 rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)]"><EmptyState title="这个月还没有计划" description="点击日历中的任意一天，写下第一件准备完成的小事。" /></div>}
