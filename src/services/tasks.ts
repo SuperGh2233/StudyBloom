@@ -5,7 +5,7 @@ import { assertDateKey, monthRange } from '../utils/date'
 import { AppError, toAppError } from '../utils/errorMessage'
 
 type TaskRow = Database['public']['Tables']['tasks']['Row']
-const mapTask = (row: TaskRow): Task => ({ id: row.id, userId: row.user_id, planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order, createdAt: row.created_at, updatedAt: row.updated_at })
+export const mapTask = (row: TaskRow): Task => ({ id: row.id, userId: row.user_id, planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order, createdAt: row.created_at, updatedAt: row.updated_at })
 
 const validateTitle = (title: string): string => {
   const value = title.trim()

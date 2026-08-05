@@ -52,7 +52,7 @@ export function MobileCalendarView({ month, tasksByDate, planDaysByDate, selecte
   )
 }
 
-function DateCell({ date, month, tasks, rest, selected, onSelect }: { date: Date; month: Date; tasks: Task[]; rest: boolean; selected: boolean; onSelect: (date: string) => void }) {
+export function DateCell({ date, month, tasks, rest, selected, onSelect }: { date: Date; month: Date; tasks: Task[]; rest: boolean; selected: boolean; onSelect: (date: string) => void }) {
   const key = keyForDate(date)
   const completed = tasks.filter((task) => task.completed).length
   const allDone = tasks.length > 0 && completed === tasks.length

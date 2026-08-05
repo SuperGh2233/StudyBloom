@@ -1,4 +1,4 @@
-import { BarChart3, CalendarDays, LogOut, Settings, Sprout } from 'lucide-react'
+import { BarChart3, CalendarDays, LogOut, Settings, Sprout, Users } from 'lucide-react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { InstallPWA } from '../components/InstallPWA'
 import { useToast } from '../components/ToastProvider'
@@ -6,6 +6,7 @@ import { useAuth } from '../features/auth/AuthContext'
 
 const items = [
   { to: '/calendar', label: '日历', icon: CalendarDays },
+  { to: '/friends', label: '好友', icon: Users },
   { to: '/statistics', label: '统计', icon: BarChart3 },
   { to: '/settings', label: '设置', icon: Settings },
 ]
@@ -44,7 +45,7 @@ export function AppShell() {
 
       <main className="pwa-safe-inline mx-auto w-full max-w-7xl pb-[calc(7rem+env(safe-area-inset-bottom))] pt-5 md:pb-10 md:pt-8"><Outlet /></main>
 
-      <nav className="safe-bottom pwa-safe-inline fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] pt-2 backdrop-blur-xl md:hidden" aria-label="主导航">
+      <nav className="safe-bottom pwa-safe-inline fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--surface)_94%,transparent)] pt-2 backdrop-blur-xl md:hidden" aria-label="主导航">
         {items.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => `focus-ring grid min-h-14 min-w-0 justify-items-center gap-1 rounded-xl py-1 text-xs font-semibold ${isActive ? 'text-[var(--accent-strong)]' : 'text-[var(--muted)]'}`}><Icon size={21} strokeWidth={1.8} />{label}</NavLink>)}
       </nav>
       <InstallPWA />

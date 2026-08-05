@@ -10,6 +10,8 @@ StudyBloom 是一个温暖、简洁的个人学习计划日历，让每天的努
 - 休息日、每日备注、复制前一天计划和复制到指定日期
 - 月度完成率、连续打卡和近七天统计
 - 数据 JSON 导入导出
+- 好友系统：StudyBloom ID 精确添加、申请接受/拒绝/取消、删除与拉黑
+- 好友日历：所有者逐个授权后，好友可只读查看对方月历和完成情况
 - Supabase Auth、PostgreSQL 和 RLS 数据隔离
 - iPhone 添加到主屏幕的 PWA 支持
 - 静态资源预缓存、离线状态提示和版本更新提示
@@ -86,7 +88,23 @@ public/
 
 ## Supabase 数据库
 
-数据库脚本位于 `supabase/schema.sql`，迁移位于 `supabase/migrations/`。表为 `plan_days` 和 `tasks`，所有策略只允许用户访问自己的数据。
+数据库脚本位于 `supabase/schema.sql`，迁移位于 `supabase/migrations/`。核心表为 `plan_days` 和 `tasks`，所有策略只允许用户访问自己的数据。
+
+好友系统由迁移 `20260805100000_add_friend_system.sql` 引入，新增三张表：
+
+| 表 | 作用 | 关键规则 |
+| --- | --- | --- |
+| `profiles` | 昵称、StudyBloom ID（`friend_code`）、是否接收申请 | 注册时触发器自动建档；`BLOOM-XXXXXX` 随机生成 |
+| `friendships` | 好友申请与关系（pending/accepted/rejected/blocked） | 只有双方可见；同一对用户同时只存在一条有效关系 |
+| `calendar_shares` | 日历查看授权（owner → viewer） | 只有 owner 可管理；只能授权给已接受的好友 |
+
+权限模型（全部由 RLS 保证，前端隐藏只是体验）：
+
+- 好友对 `tasks` / `plan_days` **只有 SELECT**：当且仅当 `calendar_shares.can_view = true` 时可见；写入策略仍然限定 `auth.uid() = user_id`，好友无法新增、修改、删除或勾选对方任务。
+- 默认不共享：成为好友后不会自动开放日历，必须由所有者在“设置 → 好友与隐私”中逐个开启。
+- 删除好友、拉黑或关闭开关都会立即让对方失去访问（删除/拉黑时由数据库触发器清理授权）。
+
+执行迁移与测试方法见 [supabase/README.md](supabase/README.md)，三账号安全测试清单见 [TESTING.md](TESTING.md)。
 
 ## 部署
 

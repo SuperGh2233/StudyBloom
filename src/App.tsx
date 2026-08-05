@@ -8,6 +8,8 @@ import { ProtectedRoute, PublicOnlyRoute } from './features/auth/RouteGuards'
 
 const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })))
 const CalendarPage = lazy(() => import('./pages/CalendarPage').then((module) => ({ default: module.CalendarPage })))
+const FriendCalendarPage = lazy(() => import('./pages/FriendCalendarPage').then((module) => ({ default: module.FriendCalendarPage })))
+const FriendsPage = lazy(() => import('./pages/FriendsPage').then((module) => ({ default: module.FriendsPage })))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })))
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
@@ -24,6 +26,8 @@ export default function App() {
             <Route element={<AppShell />}>
               <Route index element={<Navigate to="/calendar" replace />} />
               <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/friends" element={<FriendsPage />} />
+              <Route path="/friends/:id" element={<FriendCalendarPage />} />
               <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>

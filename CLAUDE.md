@@ -28,8 +28,9 @@ StudyBloom：个人学习计划日历 PWA。前端 React 19 + Vite + TypeScript 
 - **`src/hooks/useMonthPlans.ts`**：日历页的核心状态 hook——按月加载 tasks + plan_days，所有写操作是**乐观更新 + 失败回滚**（`setTasks(previous)` 后 rethrow），保持这个模式。
 - **日历页双布局**：`<1024px` 用 `MobileCalendarView`（纯状态精简月历选日期 + 下方当日任务列表），`≥1024px` 用 `DesktopCalendar`（星期标题 + 每周"日期行 + 任务行"的海报表格）。两者共享 `useMonthPlans` 数据与 `DayEditor`（移动端同时充当底部抽屉），改数据流时两个组件都要检查。CalendarPage 中 `selectedDate`（选中日）与 `editorOpen`（抽屉开关）是分离的两个状态。
 - **认证**：`features/auth/AuthContext.tsx` 提供 `useAuth`；`RouteGuards.tsx` 的 `ProtectedRoute`/`PublicOnlyRoute` 守卫路由。`/reset-password` 必须保持公开路由（Supabase 重置邮件的回调目标）。
+- **好友系统**：服务在 `services/profiles.ts`、`friendships.ts`、`calendarShares.ts`、`friendCalendar.ts`；状态在 `hooks/useFriendships.ts`（每次操作后整体 reload）与 `useFriendCalendar.ts`（只读）。好友日历页 `FriendCalendarPage` 复用移动端 `DateCell` 和桌面海报式布局的只读变体，**不能**接入任何写操作回调；`DayEditor` 绝不用于好友数据。
 
-**数据模型**（`supabase/schema.sql` 是权威脚本，在 Supabase SQL Editor 手工执行；`migrations/` 是镜像）：`plan_days`（每用户每天一行：休息日 + 备注，`unique(user_id, plan_date)`）+ `tasks`（title/completed/sort_order）。RLS 策略逐操作限定 `auth.uid() = user_id`；`anon` 角色无任何表权限。新增表必须补 RLS 策略和 grants。
+**数据模型**（`supabase/schema.sql` 是权威脚本，在 Supabase SQL Editor 手工执行；`migrations/` 按文件名顺序执行）：核心表 `plan_days`（每用户每天一行：休息日 + 备注，`unique(user_id, plan_date)`）+ `tasks`（title/completed/sort_order）；好友系统由迁移 `20260805100000_add_friend_system.sql` 引入 `profiles`/`friendships`/`calendar_shares`。RLS 策略逐操作限定 `auth.uid() = user_id`；好友只读是在 tasks/plan_days 上**追加** SELECT 策略（`calendar_shares.can_view`），写策略不动——改权限时不要动写策略。`anon` 角色无任何表权限。新增表必须补 RLS 策略和 grants。
 
 **日期约定**：一律 `YYYY-MM-DD` 字符串（`DateKey` 类型），经 `utils/date.ts` 的 `assertDateKey`/`monthRange` 校验，格式化用 date-fns。
 

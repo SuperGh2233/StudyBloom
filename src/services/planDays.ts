@@ -7,7 +7,7 @@ import { AppError, toAppError } from '../utils/errorMessage';
 
 type PlanDayRow = Database['public']['Tables']['plan_days']['Row'];
 
-const mapPlanDay = (row: PlanDayRow): PlanDay => ({
+export const mapPlanDay = (row: PlanDayRow): PlanDay => ({
   id: row.id,
   userId: row.user_id,
   planDate: row.plan_date,

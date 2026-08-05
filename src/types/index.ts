@@ -56,6 +56,36 @@ export interface PlanDayUpdate {
 
 export type CopyMode = 'overwrite' | 'append';
 
+export interface Profile {
+  id: string;
+  displayName: string;
+  friendCode: string;
+  avatarUrl: string | null;
+  allowRequests: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type FriendshipStatus = 'pending' | 'accepted' | 'rejected' | 'blocked';
+
+export interface Friendship {
+  id: string;
+  requesterId: string;
+  addresseeId: string;
+  status: FriendshipStatus;
+  createdAt: string;
+  respondedAt: string | null;
+}
+
+export interface CalendarShare {
+  id: string;
+  ownerId: string;
+  viewerId: string;
+  canView: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CopyPlanOptions {
   sourceDate: DateKey;
   targetDate: DateKey;
@@ -181,6 +211,90 @@ export interface Database {
           plan_date?: string;
           is_rest_day?: boolean;
           note?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      profiles: {
+        Row: {
+          id: string;
+          display_name: string;
+          friend_code: string;
+          avatar_url: string | null;
+          allow_requests: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          display_name: string;
+          friend_code: string;
+          avatar_url?: string | null;
+          allow_requests?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          display_name?: string;
+          friend_code?: string;
+          avatar_url?: string | null;
+          allow_requests?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      friendships: {
+        Row: {
+          id: string;
+          requester_id: string;
+          addressee_id: string;
+          status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+          created_at: string;
+          responded_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          requester_id: string;
+          addressee_id: string;
+          status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+          created_at?: string;
+          responded_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          requester_id?: string;
+          addressee_id?: string;
+          status?: 'pending' | 'accepted' | 'rejected' | 'blocked';
+          created_at?: string;
+          responded_at?: string | null;
+        };
+        Relationships: [];
+      };
+      calendar_shares: {
+        Row: {
+          id: string;
+          owner_id: string;
+          viewer_id: string;
+          can_view: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          owner_id: string;
+          viewer_id: string;
+          can_view?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          owner_id?: string;
+          viewer_id?: string;
+          can_view?: boolean;
           created_at?: string;
           updated_at?: string;
         };
