@@ -1,8 +1,9 @@
 import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { Check, Moon, Plus, Square, SquareCheck } from 'lucide-react'
+import { Check, Moon, Plus, Square, SquareCheck, Timer } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import type { PlanDay, Task } from '../../types'
-import { dateKeyFromParts } from '../../utils/date'
+import { dateKeyFromParts, todayDateKey } from '../../utils/date'
 
 const weekDays = ['一', '二', '三', '四', '五', '六', '日']
 
@@ -86,6 +87,8 @@ export function DateCell({ date, month, tasks, rest, selected, onSelect }: { dat
 }
 
 function MobileDayTaskList({ date, tasks, planDay, onToggle, onOpenEditor }: { date: string; tasks: Task[]; planDay?: PlanDay; onToggle: (id: string, completed: boolean) => Promise<void>; onOpenEditor: (date: string) => void }) {
+  const navigate = useNavigate()
+  const isToday = date === todayDateKey()
   const completed = tasks.filter((task) => task.completed).length
   const openEditor = () => onOpenEditor(date)
   return (
@@ -117,6 +120,16 @@ function MobileDayTaskList({ date, tasks, planDay, onToggle, onOpenEditor }: { d
               >
                 <span className="line-clamp-2 min-w-0 break-words">{task.title}</span>
               </button>
+              {isToday && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/study?task=${task.id}`)}
+                  aria-label={`开始学习 ${task.title}`}
+                  className="focus-ring grid h-11 w-11 shrink-0 place-items-center self-center rounded-xl text-[var(--accent-strong)] transition hover:bg-[var(--accent-soft)]"
+                >
+                  <Timer size={19} strokeWidth={1.9} />
+                </button>
+              )}
             </div>
           ))}
         </div>

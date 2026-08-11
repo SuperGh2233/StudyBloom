@@ -61,6 +61,10 @@ export function toAppError(error: unknown, fallback = '操作失败'): AppError 
     const [translated, mappedCode] = match[1];
     return new AppError(translated, mappedCode, { cause: error, status });
   }
+  // Database RPCs raise ready-made Chinese messages; keep them verbatim.
+  if (message && /[一-鿿]/.test(message)) {
+    return new AppError(message, status === 409 ? 'CONFLICT' : 'VALIDATION', { cause: error, status });
+  }
   if (status === 401 || status === 403) return new AppError('登录状态已失效，请重新登录', 'AUTH_REQUIRED', { cause: error, status });
   if (status === 409) return new AppError('数据冲突，请刷新后重试', 'CONFLICT', { cause: error, status });
   if (error instanceof TypeError && /fetch|network/i.test(error.message)) {

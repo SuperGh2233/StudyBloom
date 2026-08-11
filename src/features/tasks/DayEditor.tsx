@@ -1,14 +1,15 @@
 import { addDays, format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { ArrowDown, ArrowUp, CalendarPlus, ClipboardCopy, Moon, Plus, Save, Square, SquareCheck, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, CalendarPlus, ClipboardCopy, Moon, Plus, Save, Square, SquareCheck, Timer, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { CopyMode, PlanDay, Task } from '../../types'
 import { Button } from '../../components/Button'
 import { ConfirmDialog } from '../../components/ConfirmDialog'
 import { Input, Textarea } from '../../components/FormField'
 import { useToast } from '../../components/ToastProvider'
 import { getErrorMessage } from '../../utils/errorMessage'
-import { addDays as addDateKeyDays } from '../../utils/date'
+import { addDays as addDateKeyDays, todayDateKey } from '../../utils/date'
 
 interface DayEditorProps {
   open: boolean
@@ -34,6 +35,8 @@ export function DayEditor(props: DayEditorProps) {
   const [busy, setBusy] = useState('')
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const { showToast } = useToast()
+  const navigate = useNavigate()
+  const isToday = date === todayDateKey()
   const title = useMemo(() => format(parseISO(date), 'M月d日 EEEE', { locale: zhCN }), [date])
 
   useEffect(() => { setNote(planDay?.note ?? ''); setNewTask(''); setTargetDate('') }, [date, planDay?.note])
@@ -129,6 +132,7 @@ export function DayEditor(props: DayEditorProps) {
                   onBlur={(event) => { const value = event.target.value.trim(); if (value && value !== task.title) void run(`edit-${task.id}`, () => props.onUpdate(task.id, value), '任务已更新'); else event.target.value = task.title }}
                 />
                 <div className="flex shrink-0">
+                  {isToday && <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--accent-strong)] sm:w-9" onClick={() => navigate(`/study?task=${task.id}`)} aria-label={`开始学习 ${task.title}`}><Timer size={17} /></button>}
                   <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25 sm:w-9" disabled={index === 0 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, -1))} aria-label="上移任务"><ArrowUp size={17} /></button>
                   <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25 sm:w-9" disabled={index === tasks.length - 1 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, 1))} aria-label="下移任务"><ArrowDown size={17} /></button>
                   <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--rose)] sm:w-9" onClick={() => setDeleteId(task.id)} aria-label={`删除 ${task.title}`}><Trash2 size={17} /></button>

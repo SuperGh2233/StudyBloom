@@ -14,6 +14,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => 
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })))
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage').then((module) => ({ default: module.StatisticsPage })))
+const StudyPage = lazy(() => import('./pages/StudyPage').then((module) => ({ default: module.StudyPage })))
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/friends" element={<FriendsPage />} />
               <Route path="/friends/:id" element={<FriendCalendarPage />} />
+              <Route path="/study" element={<StudyPage />} />
               <Route path="/statistics" element={<StatisticsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>

@@ -1,4 +1,4 @@
-import { Copy, Download, FileJson, LogOut, Settings2, Trash2, Upload, UserRound, Users } from 'lucide-react'
+import { Copy, Download, FileJson, LogOut, MapPin, Settings2, Trash2, Upload, UserRound, Users } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Input } from '../components/FormField'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../features/auth/AuthContext'
+import { StudyLocationSettings } from '../features/study/StudyLocationSettings'
 import { useFriendships } from '../hooks/useFriendships'
 import { importPlan } from '../services/importExport'
 import { exportAllDataJson, validateImportData } from '../services/backup'
@@ -184,6 +185,10 @@ export function SettingsPage() {
             </div>
           </div>
         )}
+      </section>
+      <section className="surface mt-5 rounded-2xl p-5 sm:p-6">
+        <div className="flex items-start gap-3"><MapPin className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">学习地点</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">签到用于记录你真实在某个地方学习。位置只在你主动点击签到/签退时获取一次。</p></div></div>
+        <StudyLocationSettings />
       </section>
       <section className="surface mt-5 rounded-2xl p-5 sm:p-6">
         <div className="flex items-start gap-3"><FileJson className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">备份与恢复</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">导出当前账号的全部计划，或从 StudyBloom JSON 备份中恢复。</p></div></div>

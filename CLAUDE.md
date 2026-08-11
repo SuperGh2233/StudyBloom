@@ -30,7 +30,14 @@ StudyBloom：个人学习计划日历 PWA。前端 React 19 + Vite + TypeScript 
 - **认证**：`features/auth/AuthContext.tsx` 提供 `useAuth`；`RouteGuards.tsx` 的 `ProtectedRoute`/`PublicOnlyRoute` 守卫路由。`/reset-password` 必须保持公开路由（Supabase 重置邮件的回调目标）。
 - **好友系统**：服务在 `services/profiles.ts`、`friendships.ts`、`calendarShares.ts`、`friendCalendar.ts`；状态在 `hooks/useFriendships.ts`（每次操作后整体 reload）与 `useFriendCalendar.ts`（只读）。好友日历页 `FriendCalendarPage` 复用移动端 `DateCell` 和桌面海报式布局的只读变体，**不能**接入任何写操作回调；`DayEditor` 绝不用于好友数据。
 
-**数据模型**（`supabase/schema.sql` 是权威脚本，在 Supabase SQL Editor 手工执行；`migrations/` 按文件名顺序执行）：核心表 `plan_days`（每用户每天一行：休息日 + 备注，`unique(user_id, plan_date)`）+ `tasks`（title/completed/sort_order）；好友系统由迁移 `20260805100000_add_friend_system.sql` 引入 `profiles`/`friendships`/`calendar_shares`。RLS 策略逐操作限定 `auth.uid() = user_id`；好友只读是在 tasks/plan_days 上**追加** SELECT 策略（`calendar_shares.can_view`），写策略不动——改权限时不要动写策略。`anon` 角色无任何表权限。新增表必须补 RLS 策略和 grants。
+**数据模型**（`supabase/schema.sql` 是权威脚本，在 Supabase SQL Editor 手工执行；`migrations/` 按文件名顺序执行）：核心表 `plan_days`（每用户每天一行：休息日 + 备注，`unique(user_id, plan_date)`）+ `tasks`（title/completed/sort_order）；好友系统由迁移 `20260805100000_add_friend_system.sql` 引入 `profiles`/`friendships`/`calendar_shares`；学习模块由迁移 `20260811000000_add_attendance_and_study_mode.sql` 引入 `study_locations`/`attendance_records`/`study_sessions`/`study_session_segments`/`study_preferences`。RLS 策略逐操作限定 `auth.uid() = user_id`；好友只读是在 tasks/plan_days 上**追加** SELECT 策略（`calendar_shares.can_view`），写策略不动——改权限时不要动写策略。学习模块五张表**完全不向好友开放**（精确位置是敏感数据）。外键校验会绕过 RLS，所以学习模块的写入策略用 `exists(...)` 额外校验父行归属，勿删。`anon` 角色无任何表权限，也不能执行学习模块 RPC。新增表必须补 RLS 策略和 grants。
+
+**学习模块**（`/study` 路由）：
+- **时长唯一事实来源是 `study_session_segments` + 数据库时间戳**，前端每秒 `setInterval` 只负责按时间戳重算显示（`utils/studyDuration.ts`），绝不前端累加。休息阶段不产生片段；跨午夜片段按 UTC+8 本地日拆分（`splitRangeByLocalDate`，与 `utils/date.ts` 的固定 +8 约定一致）。
+- **状态切换全走 RPC**（`services/studySessions.ts`）：开始/暂停/继续/结束、`sync_pomodoro_session`（幂等追赶：阶段过期时片段准确关闭在 `phase_ends_at`，专注轮数 +1，进入 `waiting`）、阶段开始/跳过休息。部分唯一索引保证每用户最多一个活动会话、一条未签退签到、每会话一个未结束片段。
+- **`hooks/useStudyMode.tsx`**：`StudySessionProvider`（挂在 AppShell）+ `useStudyMode()`——全局活动会话状态，`ActiveStudyBar` 与各页面共用；`phaseEndSignal` 递增表示阶段结束（含后台期间），由 StudyPage 负责提示音/振动/Toast。
+- **定位纪律**：只在用户主动点击（签到/签退/使用当前位置）时调 `utils/geolocation.ts` 的 `getCurrentPosition()`（enableHighAccuracy、timeout 15s、精度 >150m 拒绝）；禁止页面加载自动请求、持续定位、写 Service Worker。距离前端用 Haversine 预检，数据库 RPC 复核。
+- 概念命名：位置功能叫「签到/签退」；统计页原「连续打卡」已改名「连续完成」（`allCompleted`/`allCompletedDays`）；计时功能统称「学习模式」（自由计时 + 番茄专注）。
 
 **日期约定**：一律 `YYYY-MM-DD` 字符串（`DateKey` 类型），经 `utils/date.ts` 的 `assertDateKey`/`monthRange` 校验，格式化用 date-fns。
 

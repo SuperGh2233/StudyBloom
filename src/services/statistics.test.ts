@@ -24,7 +24,7 @@ const restDay = (planDate: string): PlanDay => ({
 })
 
 describe('学习统计', () => {
-  it('休息日不增加也不中断连续打卡，未来任务不参与', () => {
+  it('休息日不增加也不中断连续完成，未来任务不参与', () => {
     const result = calculateStatistics(
       [task('1', '2026-08-01'), task('2', '2026-08-02'), task('4', '2026-08-04'), task('5', '2026-08-05')],
       [restDay('2026-08-03')],
@@ -33,7 +33,7 @@ describe('学习统计', () => {
     )
     expect(result.currentStreak).toBe(3)
     expect(result.longestStreak).toBe(3)
-    expect(result.checkInDays).toBe(3)
+    expect(result.allCompletedDays).toBe(3)
     expect(result.totalTaskCount).toBe(3)
     expect(result.completionRate).toBe(100)
   })
@@ -44,9 +44,9 @@ describe('学习统计', () => {
     expect(Number.isNaN(result.completionRate)).toBe(false)
   })
 
-  it('存在未完成任务时不算打卡', () => {
+  it('存在未完成任务时不算全部完成', () => {
     const result = calculateStatistics([task('1', '2026-08-01'), task('2', '2026-08-01', false)], [], { startDate: '2026-08-01', endDate: '2026-08-01' }, '2026-08-01')
-    expect(result.days[0].checkedIn).toBe(false)
+    expect(result.days[0].allCompleted).toBe(false)
     expect(result.completionRate).toBe(50)
   })
 })

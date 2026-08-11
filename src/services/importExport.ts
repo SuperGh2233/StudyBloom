@@ -1,6 +1,8 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabase } from '../lib/supabase'
 import { requireUser } from './auth'
-import type { Database, DateKey, DateRange, ImportResult, StudyBloomExport, ExportPlanDay, ExportTask, CopyMode } from '../types'
+import { parseExportAttendanceRecords, parseExportStudyLocations, parseExportStudyPreferences, parseExportStudySessionSegments, parseExportStudySessions, parseUuid } from './backup'
+import type { CopyMode, Database, DateKey, DateRange, ExportAttendanceRecord, ExportPlanDay, ExportStudyLocation, ExportStudyPreferences, ExportStudySession, ExportStudySessionSegment, ExportTask, ImportResult, StudyBloomExport } from '../types'
 import { assertDateKey, enumerateDateKeys } from '../utils/date'
 import { AppError, toAppError } from '../utils/errorMessage'
 
@@ -32,7 +34,13 @@ const parseTasks = (value: unknown): ExportTask[] => {
     if (!title || title.length > 100) throw new AppError('导入任务内容不正确', 'VALIDATION')
     const sortOrder = item.sortOrder === undefined ? 0 : Number(item.sortOrder)
     if (!Number.isInteger(sortOrder) || sortOrder < 0) throw new AppError('导入任务排序不正确', 'VALIDATION')
-    return { planDate: parseDate(item.planDate), title, completed: Boolean(item.completed), sortOrder }
+    const task: ExportTask = { planDate: parseDate(item.planDate), title, completed: Boolean(item.completed), sortOrder }
+    if (item.id !== undefined) {
+      const id = parseUuid(item.id)
+      if (!id) throw new AppError('导入任务 ID 不正确', 'VALIDATION')
+      task.id = id
+    }
+    return task
   })
 }
 
@@ -78,21 +86,146 @@ export async function exportPlan(range: DateRange): Promise<StudyBloomExport> {
 
 export async function exportPlanJson(range: DateRange): Promise<string> { return JSON.stringify(await exportPlan(range), null, 2) }
 
+interface StudyRestore {
+  locations: ExportStudyLocation[]
+  attendance: ExportAttendanceRecord[]
+  sessions: ExportStudySession[]
+  segments: ExportStudySessionSegment[]
+  preferences: ExportStudyPreferences | null
+}
+
+const EMPTY_STUDY_RESTORE: StudyRestore = { locations: [], attendance: [], sessions: [], segments: [], preferences: null }
+
+/**
+ * Restores study rows append-safe: explicit ids + ignoreDuplicates make a
+ * re-import a no-op, and FK parents go in first (locations → attendance →
+ * sessions → segments). Rows whose FK target is missing from the file are
+ * skipped (attendance) or nulled (sessions) instead of failing the import.
+ * Returns the number of rows actually inserted.
+ */
+async function restoreStudyRecords(client: SupabaseClient<Database>, userId: string, study: StudyRestore, taskIds: Set<string>): Promise<number> {
+  const locationRows = study.locations.map((location) => ({
+    id: location.id, user_id: userId, name: location.name, latitude: location.latitude, longitude: location.longitude,
+    radius_m: location.radiusM, is_active: location.isActive, is_default: location.isDefault,
+  }))
+  const locationIds = new Set(study.locations.map((location) => location.id))
+  const attendanceRows = study.attendance
+    .filter((record) => locationIds.has(record.locationId))
+    .map((record) => ({
+      id: record.id, user_id: userId, location_id: record.locationId,
+      check_in_at: record.checkInAt, check_in_latitude: record.checkInLatitude, check_in_longitude: record.checkInLongitude,
+      check_in_accuracy_m: record.checkInAccuracyM, check_in_distance_m: record.checkInDistanceM,
+      check_out_at: record.checkOutAt, check_out_latitude: record.checkOutLatitude, check_out_longitude: record.checkOutLongitude,
+      check_out_accuracy_m: record.checkOutAccuracyM, check_out_distance_m: record.checkOutDistanceM,
+      manual_closed: record.manualClosed,
+    }))
+  const attendanceIds = new Set(attendanceRows.map((row) => row.id))
+  const sessionRows = study.sessions.map((session) => ({
+    id: session.id, user_id: userId,
+    task_id: session.taskId && taskIds.has(session.taskId) ? session.taskId : null,
+    task_title_snapshot: session.taskTitleSnapshot,
+    attendance_record_id: session.attendanceRecordId && attendanceIds.has(session.attendanceRecordId) ? session.attendanceRecordId : null,
+    plan_date: session.planDate, mode: session.mode, status: session.status,
+    started_at: session.startedAt, ended_at: session.endedAt,
+    pomodoro_focus_seconds: session.pomodoroFocusSeconds,
+    pomodoro_short_break_seconds: session.pomodoroShortBreakSeconds,
+    pomodoro_long_break_seconds: session.pomodoroLongBreakSeconds,
+    pomodoro_rounds_before_long_break: session.pomodoroRoundsBeforeLongBreak,
+    pomodoro_completed_rounds: session.pomodoroCompletedRounds,
+    current_phase: session.currentPhase, current_round: session.currentRound,
+    phase_started_at: session.phaseStartedAt, phase_ends_at: session.phaseEndsAt,
+    phase_remaining_seconds: session.phaseRemainingSeconds,
+  }))
+  const sessionIds = new Set(study.sessions.map((session) => session.id))
+  const segmentRows = study.segments
+    .filter((segment) => sessionIds.has(segment.sessionId))
+    .map((segment) => ({ id: segment.id, user_id: userId, session_id: segment.sessionId, segment_kind: segment.segmentKind, started_at: segment.startedAt, ended_at: segment.endedAt }))
+
+  // 与部分唯一索引的冲突已由上方预检拦截；ignoreDuplicates 保证重复导入幂等。
+  let restored = 0
+  if (locationRows.length) {
+    const { data, error } = await client.from('study_locations').upsert(locationRows, { onConflict: 'id', ignoreDuplicates: true }).select('id')
+    if (error) throw error
+    restored += data?.length ?? 0
+  }
+  if (attendanceRows.length) {
+    const { data, error } = await client.from('attendance_records').upsert(attendanceRows, { onConflict: 'id', ignoreDuplicates: true }).select('id')
+    if (error) throw error
+    restored += data?.length ?? 0
+  }
+  if (sessionRows.length) {
+    const { data, error } = await client.from('study_sessions').upsert(sessionRows, { onConflict: 'id', ignoreDuplicates: true }).select('id')
+    if (error) throw error
+    restored += data?.length ?? 0
+  }
+  if (segmentRows.length) {
+    const { data, error } = await client.from('study_session_segments').upsert(segmentRows, { onConflict: 'id', ignoreDuplicates: true }).select('id')
+    if (error) throw error
+    restored += data?.length ?? 0
+  }
+  if (study.preferences) {
+    const { error } = await client.from('study_preferences').upsert({
+      user_id: userId,
+      default_mode: study.preferences.defaultMode,
+      focus_seconds: study.preferences.focusSeconds,
+      short_break_seconds: study.preferences.shortBreakSeconds,
+      long_break_seconds: study.preferences.longBreakSeconds,
+      rounds_before_long_break: study.preferences.roundsBeforeLongBreak,
+      sound_enabled: study.preferences.soundEnabled,
+      vibration_enabled: study.preferences.vibrationEnabled,
+    }, { onConflict: 'user_id' })
+    if (error) throw error
+  }
+  return restored
+}
+
 export async function importPlan(input: string | StudyBloomExport, options: ImportOptions = {}): Promise<ImportResult> {
   const payload = parseInput(input)
-  if (payload.version !== undefined && Number(payload.version) !== 1) throw new AppError('不支持的导入文件版本', 'VALIDATION')
+  const version = Number(payload.version ?? 1)
+  if (version !== 1 && version !== 2) throw new AppError('不支持的导入文件版本', 'VALIDATION')
   const tasks = parseTasks(payload.tasks)
   const planDays = parsePlanDays(payload.planDays)
   const mode = options.mode ?? 'overwrite'
   if (mode !== 'overwrite' && mode !== 'append') throw new AppError('导入模式不正确', 'VALIDATION')
+  const study: StudyRestore = version === 2 ? {
+    locations: parseExportStudyLocations(payload.studyLocations),
+    attendance: parseExportAttendanceRecords(payload.attendanceRecords),
+    sessions: parseExportStudySessions(payload.studySessions),
+    segments: parseExportStudySessionSegments(payload.studySessionSegments),
+    preferences: parseExportStudyPreferences(payload.studyPreferences),
+  } : EMPTY_STUDY_RESTORE
   const dates = [...new Set([...tasks.map((task) => task.planDate), ...planDays.map((day) => day.planDate)])]
-  if (!dates.length) return { taskCount: 0, planDayCount: 0 }
-  const range = rangeFromDates(dates)!
-  enumerateDateKeys(range.startDate, range.endDate)
+  if (!dates.length && !study.locations.length && !study.attendance.length && !study.sessions.length && !study.segments.length && !study.preferences) {
+    return { taskCount: 0, planDayCount: 0, studyRecordCount: 0 }
+  }
+  if (dates.length) {
+    const range = rangeFromDates(dates)!
+    enumerateDateKeys(range.startDate, range.endDate)
+  }
   const user = await requireUser()
   try {
     const client = getSupabase()
-    if (mode === 'overwrite') {
+
+    // v2 文件携带未结束记录时，若账号自己也有进行中记录，部分唯一索引会在
+    // 写入中途抛错。任何删写之前先检查，给出可操作的中文错误。
+    const fileOpenAttendance = study.attendance.some((record) => record.checkOutAt === null)
+    const fileOpenSession = study.sessions.some((session) => session.endedAt === null)
+    if (fileOpenAttendance || fileOpenSession) {
+      const checks = await Promise.all([
+        fileOpenAttendance
+          ? client.from('attendance_records').select('id').eq('user_id', user.id).is('check_out_at', null).limit(1).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+        fileOpenSession
+          ? client.from('study_sessions').select('id').eq('user_id', user.id).is('ended_at', null).limit(1).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ])
+      for (const check of checks) if (check.error) throw check.error
+      if (checks.some((check) => check.data)) {
+        throw new AppError('导入文件包含未结束的签到或学习记录，请先结束当前进行中的记录再导入', 'CONFLICT')
+      }
+    }
+
+    if (mode === 'overwrite' && dates.length) {
       const { error: taskDeleteError } = await client.from('tasks').delete().eq('user_id', user.id).in('plan_date', dates)
       if (taskDeleteError) throw taskDeleteError
       const { error: dayDeleteError } = await client.from('plan_days').delete().eq('user_id', user.id).in('plan_date', dates)
@@ -126,13 +259,23 @@ export async function importPlan(input: string | StudyBloomExport, options: Impo
       const rows = tasks.map((task) => {
         const offset = offsets.get(task.planDate) ?? 0
         if (mode === 'append') offsets.set(task.planDate, offset + 1)
-        return { user_id: user.id, plan_date: task.planDate, title: task.title, completed: task.completed, sort_order: mode === 'append' ? offset : task.sortOrder }
+        // id only present in version 2 files; keeping it lets sessions stay linked to their task.
+        return { id: task.id, user_id: user.id, plan_date: task.planDate, title: task.title, completed: task.completed, sort_order: mode === 'append' ? offset : task.sortOrder }
       })
-      const { error } = await client.from('tasks').insert(rows)
-      if (error) throw error
+      // v2 行带 id：upsert + ignoreDuplicates 让重复导入幂等；v1 无 id 走原 insert。
+      if (tasks.every((task) => Boolean(task.id))) {
+        const { error } = await client.from('tasks').upsert(rows, { onConflict: 'id', ignoreDuplicates: true })
+        if (error) throw error
+      } else {
+        const { error } = await client.from('tasks').insert(rows)
+        if (error) throw error
+      }
       taskCount = tasks.length
     }
-    return { taskCount, planDayCount }
+
+    const taskIds = new Set(tasks.flatMap((task) => (task.id ? [task.id] : [])))
+    const studyRecordCount = await restoreStudyRecords(client, user.id, study, taskIds)
+    return { taskCount, planDayCount, studyRecordCount }
   } catch (error) { throw toAppError(error, '导入计划失败') }
 }
 

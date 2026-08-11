@@ -35,7 +35,7 @@ const daily = (date: DateKey, tasks: Task[], planDay: PlanDay | undefined, today
     isRestDay: planDay?.isRestDay ?? false,
     taskCount: tasks.length,
     completedTaskCount,
-    checkedIn: date <= today && !planDay?.isRestDay && tasks.length > 0 && completedTaskCount === tasks.length,
+    allCompleted: date <= today && !planDay?.isRestDay && tasks.length > 0 && completedTaskCount === tasks.length,
   };
 };
 
@@ -59,7 +59,7 @@ export function calculateStatistics(
   const daysByDate = new Map(planDays.map((planDay) => [planDay.planDate, planDay]));
   const days = dates.map((date) => daily(date, tasksByDate.get(date) ?? [], daysByDate.get(date), today));
   const considered = days.filter((day) => day.date <= today);
-  const checkInDays = considered.filter((day) => day.checkedIn).length;
+  const allCompletedDays = considered.filter((day) => day.allCompleted).length;
   const totalTaskCount = considered.reduce((sum, day) => sum + day.taskCount, 0);
   const completedTaskCount = considered.reduce((sum, day) => sum + day.completedTaskCount, 0);
 
@@ -67,7 +67,7 @@ export function calculateStatistics(
   for (let index = considered.length - 1; index >= 0; index -= 1) {
     const day = considered[index];
     if (day.isRestDay) continue;
-    if (!day.checkedIn) break;
+    if (!day.allCompleted) break;
     currentStreak += 1;
   }
 
@@ -75,7 +75,7 @@ export function calculateStatistics(
   let running = 0;
   considered.forEach((day) => {
     if (day.isRestDay) return;
-    if (day.checkedIn) {
+    if (day.allCompleted) {
       running += 1;
       longestStreak = Math.max(longestStreak, running);
     } else {
@@ -88,7 +88,7 @@ export function calculateStatistics(
     endDate: range.endDate,
     totalTaskCount,
     completedTaskCount,
-    checkInDays,
+    allCompletedDays,
     currentStreak,
     longestStreak,
     completionRate: totalTaskCount ? Math.round((completedTaskCount / totalTaskCount) * 10000) / 100 : 0,

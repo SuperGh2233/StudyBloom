@@ -7,13 +7,14 @@ interface ConfirmDialogProps {
   title: string
   description: string
   confirmLabel?: string
+  cancelLabel?: string
   loading?: boolean
   danger?: boolean
   onConfirm: () => void
   onClose: () => void
 }
 
-export function ConfirmDialog({ open, title, description, confirmLabel = '确认', loading, danger = false, onConfirm, onClose }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, title, description, confirmLabel = '确认', cancelLabel = '取消', loading, danger = false, onConfirm, onClose }: ConfirmDialogProps) {
   useEffect(() => {
     if (!open) return
     const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape' && !loading) onClose() }
@@ -34,7 +35,7 @@ export function ConfirmDialog({ open, title, description, confirmLabel = '确认
           <button className="focus-ring grid h-10 w-10 place-items-center rounded-xl text-[var(--muted)]" onClick={onClose} aria-label="关闭" disabled={loading}><X size={19} /></button>
         </div>
         <div className="mt-6 grid grid-cols-2 gap-3">
-          <Button variant="secondary" onClick={onClose} disabled={loading}>取消</Button>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>{cancelLabel}</Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} loading={loading}>{confirmLabel}</Button>
         </div>
       </section>
