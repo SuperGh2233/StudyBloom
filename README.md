@@ -1,6 +1,6 @@
 # StudyBloom
 
-StudyBloom 是一个温暖、简洁的个人学习计划日历，让每天的努力慢慢开花。用户可以记录每日任务、完成任务、查看月度统计，并在不同设备间通过 Supabase 同步。
+StudyBloom 是一个温暖、简洁的个人学习计划日历，让每天的努力慢慢开花。用户可以记录每日任务、完成任务、查看月度统计、设置学习地点签到，并用自由计时和番茄专注记录真实的学习时长——所有数据在不同设备间通过 Supabase 同步。
 
 ## 功能
 
@@ -45,6 +45,8 @@ VITE_SUPABASE_ANON_KEY=
 
 `.env.local` 已被 Git 忽略。只能使用 Supabase 的 Publishable/anon key，不能使用 `service_role` key。
 
+> 学习模块需要先在 Supabase 执行迁移 `supabase/migrations/20260811000000_add_attendance_and_study_mode.sql`（步骤见 [supabase/README.md](supabase/README.md)），否则学习页与统计页的相关功能会提示错误。
+
 常用检查命令：
 
 ```bash
@@ -59,17 +61,23 @@ npm run preview
 ```text
 src/
   components/       通用组件、PWA 提示和离线状态
-  features/         认证、日历和每日任务功能
-  hooks/            月度计划和 PWA Hooks
-  layouts/          登录后应用壳层
-  pages/            登录、日历、统计、设置和重置密码页面
-  services/         Supabase 数据服务、备份和统计
-  types/            TypeScript 类型
-  utils/            日期和错误处理工具
+  features/
+    auth/           登录注册与路由守卫
+    calendar/       移动端与桌面端日历布局
+    tasks/          每日任务编辑抽屉
+    study/          学习页组件（计时、签到、任务选择、学习记录）
+  hooks/            月度计划、好友、学习会话与签到 Hooks
+  layouts/          登录后应用壳层（五列导航 + ActiveStudyBar）
+  pages/            登录、日历、好友、学习、统计、设置和重置密码页面
+  services/         Supabase 数据服务、备份和统计（含学习/签到服务）
+  types/            TypeScript 领域类型与 Database 类型
+  utils/            日期、错误处理、定位与学习时长工具
   lib/              Supabase 客户端
 public/
   pwa-icon.svg      可替换的品牌图标源文件
   pwa-*.png         PWA 图标
+supabase/
+  migrations/       按文件名顺序执行的迁移（含学习模块迁移）
 ```
 
 ## PWA 使用方式
