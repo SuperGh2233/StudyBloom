@@ -89,6 +89,56 @@ export interface CalendarShare {
   updatedAt: string;
 }
 
+export type CompanionExperienceMode = 'study_together' | 'supporter';
+export type CompanionShareLevel = 'none' | 'bloom_only' | 'summary';
+
+export interface CompanionPreferences {
+  userId: string;
+  primaryCompanionId: string | null;
+  experienceMode: CompanionExperienceMode;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompanionSetting {
+  ownerId: string;
+  companionId: string;
+  shareLevel: CompanionShareLevel;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CompanionDaySummary {
+  date: DateKey;
+  effectiveStudy: boolean;
+  studiedMinutes: number | null;
+  completedTasks: number | null;
+  totalTasks: number | null;
+}
+
+export interface CompanionSummary {
+  companionId: string;
+  shareLevel: CompanionShareLevel;
+  days: CompanionDaySummary[];
+}
+
+export interface CompanionEncouragement {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  sentOn: DateKey;
+  kind: 'flower';
+  createdAt: string;
+}
+
+export interface CompanionWeeklySummary {
+  weekBloomDays: number;
+  totalBloomDays: number;
+  weekMutualFlowerDays: number;
+  milestone: number | null;
+  summary: string;
+}
+
 export interface FriendNote {
   ownerId: string;
   friendId: string;
@@ -645,6 +695,81 @@ export interface Database {
         };
         Relationships: [];
       };
+      companion_preferences: {
+        Row: {
+          user_id: string;
+          primary_companion_id: string | null;
+          experience_mode: 'study_together' | 'supporter';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          primary_companion_id?: string | null;
+          experience_mode?: 'study_together' | 'supporter';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          primary_companion_id?: string | null;
+          experience_mode?: 'study_together' | 'supporter';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      companion_settings: {
+        Row: {
+          owner_id: string;
+          companion_id: string;
+          share_level: 'none' | 'bloom_only' | 'summary';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          owner_id: string;
+          companion_id: string;
+          share_level?: 'none' | 'bloom_only' | 'summary';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          owner_id?: string;
+          companion_id?: string;
+          share_level?: 'none' | 'bloom_only' | 'summary';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      companion_encouragements: {
+        Row: {
+          id: string;
+          sender_id: string;
+          recipient_id: string;
+          sent_on: string;
+          kind: 'flower';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          sender_id: string;
+          recipient_id: string;
+          sent_on: string;
+          kind?: 'flower';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          sender_id?: string;
+          recipient_id?: string;
+          sent_on?: string;
+          kind?: 'flower';
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       study_locations: {
         Row: {
           id: string;
@@ -974,6 +1099,29 @@ export interface Database {
       restore_study_reflections: {
         Args: { p_sessions: Json };
         Returns: number;
+      };
+      get_companion_summary: {
+        Args: { p_target_user_id: string; p_start_date: string; p_end_date: string };
+        Returns: {
+          summary_date: string;
+          effective_study: boolean;
+          studied_minutes: number | null;
+          completed_tasks: number | null;
+          total_tasks: number | null;
+        }[];
+      };
+      get_companion_weekly_summary: {
+        Args: { p_target_user_id: string };
+        Returns: {
+          week_bloom_days: number;
+          total_bloom_days: number;
+          week_mutual_flower_days: number;
+          milestone: number | null;
+        }[];
+      };
+      send_companion_flower: {
+        Args: { p_recipient_id: string };
+        Returns: Database['public']['Tables']['companion_encouragements']['Row'];
       };
     };
     Enums: Record<string, never>;

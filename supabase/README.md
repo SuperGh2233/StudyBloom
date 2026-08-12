@@ -214,6 +214,31 @@ where table_schema = 'public' and table_name = 'study_preferences'
 
 第一条应返回 `relrowsecurity = true`，第二条应返回三行。
 
+### V0.9.0 一起绽放迁移
+
+已有项目继续执行 `migrations/20260816000000_add_companionship.sql`。该迁移新增 `companion_preferences`、`companion_settings`、`companion_encouragements`，以及三个受保护的 RPC。
+
+- 好友关系不会自动开放学习数据，`companion_settings.share_level` 默认 `none`。
+- `get_companion_summary` 最多返回最近七天，并根据授权只返回有效学习布尔值，或额外返回整数分钟和任务完成数。
+- `get_companion_weekly_summary` 只在双方都至少授权 `bloom_only` 时返回共同记录，不返回双方对比数据。
+- `send_companion_flower` 由数据库按 `Asia/Shanghai` 生成日期，唯一约束保证多设备重复请求只保留一条。
+- 原始 `study_sessions`、`study_session_segments`、签到和定位策略没有向好友增加任何权限。
+- 删除、拉黑或好友关系失效时，触发器立即清除双方搭子设置、小花记录和首页搭子引用。
+
+执行后验证：
+
+```sql
+select relname, relrowsecurity from pg_class
+where relnamespace = 'public'::regnamespace
+  and relname in ('companion_preferences','companion_settings','companion_encouragements');
+
+select routine_name from information_schema.routines
+where routine_schema = 'public'
+  and routine_name in ('get_companion_summary','get_companion_weekly_summary','send_companion_flower');
+```
+
+三张表应全部启用 RLS，三个函数均应存在。真实权限验证需使用至少三个账号：已接受好友、非好友和被拉黑账号，完整清单见根目录 `TESTING.md`。
+
 ### 权限与验证模型
 
 - 五张新表全部为「仅本人」策略：`auth.uid() = user_id`。V0.4.1 后三张核心记录表额外撤销浏览器直接写权限。**好友（calendar_shares）不获得任何新表的读取权限**——精确经纬度、签到记录、学习时长明细永不对好友开放。

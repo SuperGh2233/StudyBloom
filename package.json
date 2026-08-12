@@ -1,15 +1,15 @@
 {
   "name": "study-bloom",
   "private": true,
-  "version": "0.8.1",
+  "version": "0.9.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "vite --configLoader native",
+    "build": "tsc -b && vite build --configLoader native",
     "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "preview": "vite preview"
+    "test": "vitest run --config vitest.config.ts --configLoader native --pool threads --maxWorkers 1 --no-file-parallelism",
+    "test:watch": "vitest --config vitest.config.ts --configLoader native --pool threads --maxWorkers 1 --no-file-parallelism",
+    "preview": "vite preview --configLoader native"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.0",

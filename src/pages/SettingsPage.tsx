@@ -1,4 +1,4 @@
-import { CalendarClock, Copy, Download, FileJson, LogOut, MapPin, Settings2, Target, Trash2, Upload, UserRound, Users } from 'lucide-react'
+import { CalendarClock, Copy, Download, FileJson, Flower2, LogOut, MapPin, Settings2, Target, Trash2, Upload, UserRound, Users } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
@@ -8,12 +8,13 @@ import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../features/auth/AuthContext'
 import { StudyLocationSettings } from '../features/study/StudyLocationSettings'
 import { useFriendships } from '../hooks/useFriendships'
+import { useCompanionship } from '../hooks/useCompanionship'
 import { importPlan } from '../services/importExport'
 import { exportAllDataJson, validateImportData } from '../services/backup'
 import { getMyProfile, updateMyProfile } from '../services/profiles'
 import { getStudyPreferences, saveStudyPreferences } from '../services/studySessions'
 import { exportAttendanceCsv, exportDailyStudyCsv, exportStudySessionsCsv } from '../services/csvExport'
-import type { CopyMode, Friendship, Profile, StudyBloomExport } from '../types'
+import type { CompanionShareLevel, CopyMode, Friendship, Profile, StudyBloomExport } from '../types'
 import { todayDateKey } from '../utils/date'
 import { getErrorMessage } from '../utils/errorMessage'
 
@@ -23,6 +24,7 @@ export function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const friends = useFriendships()
+  const companionship = useCompanionship(friends)
   const fileInput = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<StudyBloomExport | null>(null)
   const [pendingMode, setPendingMode] = useState<CopyMode | null>(null)
@@ -238,6 +240,64 @@ export function SettingsPage() {
                   })}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+      </section>
+      <section id="companionship" className="surface mt-5 scroll-mt-24 rounded-2xl p-5 sm:p-6">
+        <div className="flex items-start gap-3"><Flower2 className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">搭子与一起绽放</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">选择首页搭子，并决定对方能看到多少。好友关系本身不会自动开放学习记录。</p></div></div>
+
+        {companionship.error ? (
+          <div className="mt-4 rounded-xl bg-[var(--rose-soft)] px-4 py-3 text-sm text-[var(--rose)]"><p>{companionship.error}</p><Button variant="secondary" className="mt-3" onClick={() => companionship.reload()}>重新加载</Button></div>
+        ) : friends.friends.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-dashed border-[var(--line)] px-4 py-6 text-center text-sm text-[var(--muted)]">还没有可以选择的搭子。先在“好友”页面建立好友关系。</p>
+        ) : (
+          <div className="mt-5 grid gap-5">
+            <label className="grid gap-2 text-sm font-semibold" htmlFor="primary-companion">首页搭子
+              <select id="primary-companion" className="focus-ring min-h-11 min-w-0 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 text-base font-normal text-[var(--ink)]" value={companionship.primaryId ?? ''} disabled={Boolean(busy) || companionship.loading} onChange={(event) => runPrivacy('primary-companion', () => companionship.setPrimary(event.target.value || null), event.target.value ? '首页搭子已保存' : '已取消首页搭子')}>
+                <option value="">暂不设置</option>
+                {friends.friends.map((relation) => {
+                  const friendId = friends.counterpartId(relation)
+                  const name = friends.notes.get(friendId)?.remark ?? friends.profiles.get(friendId)?.displayName ?? '学习搭子'
+                  return <option key={friendId} value={friendId}>{name}</option>
+                })}
+              </select>
+              <span className="text-xs font-normal leading-5 text-[var(--muted)]">首页一次只展示一位搭子。更换搭子不会复制原有分享权限。</span>
+            </label>
+
+            <div>
+              <p className="text-sm font-semibold">我的使用方式</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" aria-pressed={companionship.preferences?.experienceMode !== 'supporter'} className={`focus-ring min-h-14 rounded-xl border px-3 text-sm font-semibold ${companionship.preferences?.experienceMode !== 'supporter' ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]' : 'border-[var(--line)] bg-[var(--surface)] text-[var(--muted)]'}`} onClick={() => runPrivacy('companion-mode', () => companionship.setMode('study_together'), '已切换为一起学习')}>我也要一起学习</button>
+                <button type="button" aria-pressed={companionship.preferences?.experienceMode === 'supporter'} className={`focus-ring min-h-14 rounded-xl border px-3 text-sm font-semibold ${companionship.preferences?.experienceMode === 'supporter' ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-strong)]' : 'border-[var(--line)] bg-[var(--surface)] text-[var(--muted)]'}`} onClick={() => runPrivacy('companion-mode', () => companionship.setMode('supporter'), '已切换为陪伴模式')}>我主要来陪伴 TA</button>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-[var(--muted)]">使用方式只调整引导内容，不改变权限，也不会限制你开始学习。</p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold">我愿意分享的范围</h3>
+              <p className="mt-1 text-xs leading-5 text-[var(--muted)]">分享由你决定，随时可以关闭。位置、备注和详细时间不会分享。</p>
+              <div className="mt-3 grid gap-3">
+                {friends.friends.map((relation) => {
+                  const friendId = friends.counterpartId(relation)
+                  const friendName = friends.notes.get(friendId)?.remark ?? friends.profiles.get(friendId)?.displayName ?? '学习搭子'
+                  const level = companionship.settings.find((setting) => setting.ownerId === friends.me && setting.companionId === friendId)?.shareLevel ?? 'none'
+                  const preview = level === 'none' ? '对方看不到任何学习统计。' : level === 'bloom_only' ? '对方只知道你今天是否完成过至少 10 分钟有效学习。' : '对方可看到今日有效分钟数和任务完成数量。'
+                  return (
+                    <div key={friendId} className="rounded-xl border border-[var(--line)] p-3">
+                      <div className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_180px] sm:items-center">
+                        <label htmlFor={`companion-share-${friendId}`} className="truncate text-sm font-semibold">分享给 {friendName}</label>
+                        <select id={`companion-share-${friendId}`} className="focus-ring min-h-11 min-w-0 rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 text-base text-[var(--ink)]" value={level} disabled={Boolean(busy)} onChange={(event) => runPrivacy(`companion-share-${friendId}`, () => companionship.setShare(friendId, event.target.value as CompanionShareLevel), '分享范围已保存')}>
+                          <option value="none">不分享</option>
+                          <option value="bloom_only">仅共同绽放</option>
+                          <option value="summary">今日概要</option>
+                        </select>
+                      </div>
+                      <p className="mt-2 rounded-lg bg-[var(--surface-soft)] px-3 py-2 text-xs leading-5 text-[var(--muted)]"><strong className="text-[var(--ink)]">对方将看到：</strong>{preview}</p>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         )}

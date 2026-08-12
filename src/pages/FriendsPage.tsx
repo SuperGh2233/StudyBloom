@@ -1,4 +1,4 @@
-import { Eye, Pencil, Search, Share2, UserPlus, Users, X } from 'lucide-react'
+import { Eye, Flower2, Pencil, Search, Share2, UserPlus, Users, X } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '../components/Button'
@@ -7,6 +7,7 @@ import { Input } from '../components/FormField'
 import { LoadingState } from '../components/LoadingState'
 import { useToast } from '../components/ToastProvider'
 import { useFriendships } from '../hooks/useFriendships'
+import { useCompanionship } from '../hooks/useCompanionship'
 import { findProfileByFriendCode } from '../services/profiles'
 import type { Friendship, Profile } from '../types'
 import { getErrorMessage } from '../utils/errorMessage'
@@ -14,6 +15,7 @@ import { buildFriendInviteUrl, clearPendingInvite, isFriendCode, normalizeFriend
 
 export function FriendsPage() {
   const data = useFriendships()
+  const companionship = useCompanionship(data)
   const { showToast } = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const [busy, setBusy] = useState('')
@@ -112,6 +114,9 @@ export function FriendsPage() {
 
   const profileOf = (relation: Friendship) => data.profiles.get(data.counterpartId(relation))
   const nameOf = (relation: Friendship) => profileOf(relation)?.displayName ?? '未知用户'
+  const onlyFriend = data.friends.length === 1 ? data.friends[0] : null
+  const onlyFriendId = onlyFriend ? data.counterpartId(onlyFriend) : ''
+  const onlyFriendName = onlyFriend ? data.notes.get(onlyFriendId)?.remark ?? data.profiles.get(onlyFriendId)?.displayName ?? '这位搭子' : ''
 
   const saveNote = async (event: FormEvent) => {
     event.preventDefault()
@@ -180,6 +185,28 @@ export function FriendsPage() {
         </section>
       )}
 
+      {onlyFriend && !companionship.loading && !companionship.primaryId && (
+        <section className="surface mt-4 min-w-0 rounded-2xl p-4 sm:mt-5 sm:p-5">
+          <h2 className="flex items-center gap-2 font-bold"><Flower2 size={18} className="text-[var(--accent-strong)]" />和 {onlyFriendName} 开启一起绽放</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">先选择你的使用方式。此操作不会自动共享学习数据。</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button variant="secondary" className="min-h-14 px-2 text-xs sm:text-sm" onClick={() => run('setup-study', async () => { await companionship.setPrimary(onlyFriendId); await companionship.setMode('study_together') }, '首页搭子已设置')}>我也要一起学习</Button>
+            <Button variant="secondary" className="min-h-14 px-2 text-xs sm:text-sm" onClick={() => run('setup-support', async () => { await companionship.setPrimary(onlyFriendId); await companionship.setMode('supporter') }, '首页搭子已设置')}>我主要来陪伴 TA</Button>
+          </div>
+        </section>
+      )}
+
+      {companionship.primaryId && companionship.ownShareLevel === 'none' && (
+        <section className="surface mt-4 min-w-0 rounded-2xl p-4 sm:mt-5 sm:p-5">
+          <h2 className="font-bold">选择分享范围</h2>
+          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">推荐仅分享“今天是否完成过 10 分钟有效学习”。不会分享分钟数、任务、位置或在线状态。</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button onClick={() => run('setup-share', () => companionship.setShare(companionship.primaryId!, 'bloom_only'), '已开启仅共同绽放')}>开启仅共同绽放</Button>
+            <Link to="/settings#companionship" className="focus-ring inline-flex min-h-11 items-center rounded-xl border border-[var(--line)] px-4 text-sm font-semibold text-[var(--accent-strong)]">查看全部选项</Link>
+          </div>
+        </section>
+      )}
+
       <section className="surface mt-4 min-w-0 rounded-2xl p-4 sm:mt-5 sm:p-5">
         <h2 className="font-bold">我的好友</h2>
         {data.friends.length === 0 ? (
@@ -200,9 +227,11 @@ export function FriendsPage() {
                       {remark ? `${profile?.displayName ?? '好友'} · ${profile?.friendCode ?? ''}` : profile?.friendCode}
                       {data.sharedToMe.has(friendId) && <span className="ml-2 rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--accent-strong)]">日历已开放给我</span>}
                       {data.grantedByMe.has(friendId) && <span className="ml-2 rounded-full bg-[var(--surface-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--muted)]">已共享我的日历</span>}
+                      {companionship.primaryId === friendId && <span className="ml-2 rounded-full bg-[var(--rose-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--rose)]">首页搭子</span>}
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
+                    {companionship.primaryId !== friendId && <Button variant="ghost" className="min-h-11 px-3 text-xs sm:text-sm" icon={<Flower2 size={15} />} onClick={() => run(`primary-${friendId}`, () => companionship.setPrimary(friendId), '已设为首页搭子')}>设为搭子</Button>}
                     <Button variant="ghost" className="min-h-11 px-3 text-xs sm:text-sm" icon={<Pencil size={15} />} onClick={() => setEditingNote({ friendId, value: remark ?? '' })}>备注</Button>
                     <Link to={`/friends/${friendId}`} className="focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-[var(--line)] px-3 text-xs font-semibold text-[var(--accent-strong)] transition hover:bg-[var(--accent-soft)] sm:text-sm"><Eye size={15} />查看日历</Link>
                     <Button variant="ghost" className="min-h-11 px-3 text-xs text-[var(--rose)] sm:text-sm" onClick={() => setConfirm({ kind: 'remove', relation, name: displayName })}>删除</Button>

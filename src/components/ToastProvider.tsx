@@ -25,7 +25,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div key={toast.id} className="surface gentle-enter pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium">
             {toast.kind === 'success' ? <CheckCircle2 className="shrink-0 text-[var(--accent-strong)]" size={20} /> : <XCircle className="shrink-0 text-[#b84d56]" size={20} />}
             <span className="flex-1">{toast.message}</span>
-            <button className="focus-ring grid h-9 w-9 place-items-center rounded-lg text-[var(--muted)]" aria-label="关闭提示" onClick={() => dismiss(toast.id)}><X size={18} /></button>
+            <button className="focus-ring grid h-11 w-11 place-items-center rounded-lg text-[var(--muted)]" aria-label="关闭提示" onClick={() => dismiss(toast.id)}><X size={18} /></button>
           </div>
         ))}
       </div>

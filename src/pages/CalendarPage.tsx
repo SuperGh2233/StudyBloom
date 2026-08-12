@@ -7,6 +7,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useToast } from '../components/ToastProvider'
 import { DesktopCalendar } from '../features/calendar/DesktopCalendar'
 import { MobileCalendarView } from '../features/calendar/MobileCalendar'
+import { CompanionCard } from '../features/companionship/CompanionCard'
 import { DayEditor } from '../features/tasks/DayEditor'
 import { DailyGoalCard } from '../features/study/DailyGoalCard'
 import { ExamCountdownCard } from '../features/study/ExamCountdownCard'
@@ -14,7 +15,9 @@ import { FirstRunSheet } from '../features/study/FirstRunSheet'
 import { ProgressivePrompt } from '../features/study/ProgressivePrompt'
 import { TodayStudyCard } from '../features/study/TodayStudyCard'
 import { useDailyStudyGoal } from '../hooks/useDailyStudyGoal'
+import { useCompanionship } from '../hooks/useCompanionship'
 import { useFirstRunOnboarding } from '../hooks/useFirstRunOnboarding'
+import { useFriendships } from '../hooks/useFriendships'
 import { useMonthPlans } from '../hooks/useMonthPlans'
 import { useQuickStartStudy } from '../hooks/useQuickStartStudy'
 import { useStudyMode } from '../hooks/useStudyMode'
@@ -32,6 +35,8 @@ export function CalendarPage() {
   const today = useTodayTasks(todayRefreshKey)
   const studySummaries = useTaskStudySummaries(data.tasks.map((task) => task.id))
   const dailyGoal = useDailyStudyGoal()
+  const friendships = useFriendships()
+  const companionship = useCompanionship(friendships)
   const study = useStudyMode()
   const quickStart = useQuickStartStudy()
   const firstRun = useFirstRunOnboarding()
@@ -53,6 +58,7 @@ export function CalendarPage() {
 
   return (
     <div className="gentle-enter min-w-0">
+      {companionship.preferences?.experienceMode === 'supporter' && <CompanionCard data={companionship} friends={friendships} />}
       <div className={`grid min-w-0 gap-3 ${!dailyGoal.loading && dailyGoal.countdownEnabled && dailyGoal.countdownDate ? 'lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]' : ''}`}>
         <TodayStudyCard
           tasks={today.tasks}
@@ -67,6 +73,8 @@ export function CalendarPage() {
         />
         {!dailyGoal.loading && dailyGoal.countdownEnabled && dailyGoal.countdownDate && <ExamCountdownCard title={dailyGoal.countdownTitle} targetDate={dailyGoal.countdownDate} />}
       </div>
+
+      {companionship.preferences?.experienceMode !== 'supporter' && <CompanionCard data={companionship} friends={friendships} />}
 
       <ProgressivePrompt hidden={firstRun.open || firstRun.loading} studiedSeconds={dailyGoal.studiedSeconds} dailyGoalEnabled={dailyGoal.enabled} activeStudyDays={dailyGoal.activeStudyDays} allTodayTasksCompleted={allTodayTasksCompleted} />
 
