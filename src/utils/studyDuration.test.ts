@@ -48,6 +48,8 @@ const segment = (overrides: Partial<StudySessionSegment> = {}): StudySessionSegm
   userId: 'user-1',
   sessionId: 'session-1',
   segmentKind: 'free',
+  pomodoroRound: null,
+  pomodoroCompletedAt: null,
   startedAt: '2026-08-10T09:00:00+08:00',
   endedAt: '2026-08-10T09:30:00+08:00',
   createdAt: '2026-08-10T09:00:00+08:00',
@@ -289,6 +291,66 @@ describe('学习统计', () => {
     expect(stats.byDay.find((day) => day.date === '2026-08-10')?.seconds).toBe(3600)
     expect(stats.byDay.find((day) => day.date === '2026-08-11')?.seconds).toBe(3600)
     expect(stats.totalSeconds).toBe(7200)
+  })
+
+  it('跨午夜完成的番茄轮数计入实际完成日期', () => {
+    const pomodoro = session({
+      id: 'night-pomodoro',
+      planDate: '2026-08-10',
+      mode: 'pomodoro',
+      taskTitleSnapshot: '英语阅读',
+      pomodoroFocusSeconds: 1500,
+      pomodoroShortBreakSeconds: 300,
+      pomodoroLongBreakSeconds: 900,
+      pomodoroRoundsBeforeLongBreak: 4,
+      pomodoroCompletedRounds: 1,
+    })
+    const fragments = [
+      segment({
+        id: 'night-focus-a',
+        sessionId: pomodoro.id,
+        segmentKind: 'focus',
+        pomodoroRound: 1,
+        pomodoroCompletedAt: '2026-08-11T00:15:00+08:00',
+        startedAt: '2026-08-10T23:50:00+08:00',
+        endedAt: '2026-08-11T00:00:00+08:00',
+      }),
+      segment({
+        id: 'night-focus-b',
+        sessionId: pomodoro.id,
+        segmentKind: 'focus',
+        pomodoroRound: 1,
+        pomodoroCompletedAt: '2026-08-11T00:15:00+08:00',
+        startedAt: '2026-08-11T00:00:00+08:00',
+        endedAt: '2026-08-11T00:15:00+08:00',
+      }),
+    ]
+    const stats = calculateStudyStatistics([pomodoro], fragments, { startDate: '2026-08-10', endDate: '2026-08-11' })
+    expect(stats.byDay.find((day) => day.date === '2026-08-10')?.pomodoroRounds).toBe(0)
+    expect(stats.byDay.find((day) => day.date === '2026-08-11')?.pomodoroRounds).toBe(1)
+    expect(stats.completedPomodoroRounds).toBe(1)
+    expect(stats.byTask[0].pomodoroRounds).toBe(1)
+  })
+
+  it('旧番茄汇总与新完成标记混合时不重复计数', () => {
+    const pomodoro = session({
+      id: 'mixed-pomodoro',
+      mode: 'pomodoro',
+      pomodoroCompletedRounds: 3,
+      taskTitleSnapshot: '数学',
+    })
+    const marked = segment({
+      sessionId: pomodoro.id,
+      segmentKind: 'focus',
+      pomodoroRound: 3,
+      pomodoroCompletedAt: '2026-08-11T00:10:00+08:00',
+      startedAt: '2026-08-10T23:55:00+08:00',
+      endedAt: '2026-08-11T00:10:00+08:00',
+    })
+    const stats = calculateStudyStatistics([pomodoro], [marked], { startDate: '2026-08-10', endDate: '2026-08-11' })
+    expect(stats.completedPomodoroRounds).toBe(3)
+    expect(stats.byDay.find((day) => day.date === '2026-08-10')?.pomodoroRounds).toBe(2)
+    expect(stats.byDay.find((day) => day.date === '2026-08-11')?.pomodoroRounds).toBe(1)
   })
 
   it('只查次日时，跨午夜学习的次日时长仍被计入', () => {

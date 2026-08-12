@@ -1,29 +1,30 @@
 import { CloudOff, Cloud } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { useNetworkStatus } from '../hooks/useNetworkStatus'
 
 type NetworkState = 'online' | 'offline' | 'recovered'
 
 export function OfflineBanner() {
-  const [state, setState] = useState<NetworkState>(() => navigator.onLine === false ? 'offline' : 'online')
+  const online = useNetworkStatus()
+  const previousOnline = useRef(online)
+  const [state, setState] = useState<NetworkState>(() => online ? 'online' : 'offline')
   const timerRef = useRef<number | null>(null)
 
   useEffect(() => {
-    const onOffline = () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current)
+    if (timerRef.current) window.clearTimeout(timerRef.current)
+    if (!online) {
       setState('offline')
-    }
-    const onOnline = () => {
+    } else if (!previousOnline.current) {
       setState('recovered')
       timerRef.current = window.setTimeout(() => setState('online'), 3600)
+    } else {
+      setState('online')
     }
-    window.addEventListener('offline', onOffline)
-    window.addEventListener('online', onOnline)
+    previousOnline.current = online
     return () => {
-      window.removeEventListener('offline', onOffline)
-      window.removeEventListener('online', onOnline)
       if (timerRef.current) window.clearTimeout(timerRef.current)
     }
-  }, [])
+  }, [online])
 
   if (state === 'online') return null
   const offline = state === 'offline'

@@ -13,6 +13,7 @@ import { StudyRecords } from '../features/study/StudyRecords'
 import { StudyTimer } from '../features/study/StudyTimer'
 import { TaskPicker } from '../features/study/TaskPicker'
 import { useAttendance } from '../hooks/useAttendance'
+import { useNetworkStatus } from '../hooks/useNetworkStatus'
 import { useStudyMode } from '../hooks/useStudyMode'
 import { listAttendanceRecordsByDate } from '../services/attendance'
 import {
@@ -74,6 +75,7 @@ const modeButtonClass = (selected: boolean) =>
 export function StudyPage() {
   const study = useStudyMode()
   const attendance = useAttendance()
+  const online = useNetworkStatus()
   const { showToast } = useToast()
   const [searchParams] = useSearchParams()
 
@@ -141,6 +143,10 @@ export function StudyPage() {
 
   const run = useCallback(async (key: string, action: () => Promise<void>, success?: string) => {
     if (busyRef.current) return
+    if (!online) {
+      showToast('当前处于离线状态，学习计时需要连接网络后使用。', 'error')
+      return
+    }
     busyRef.current = true
     setBusy(key)
     try {
@@ -152,9 +158,13 @@ export function StudyPage() {
       busyRef.current = false
       setBusy('')
     }
-  }, [showToast])
+  }, [online, showToast])
 
   const persistPrefs = useCallback(async (update: StudyPreferencesUpdate) => {
+    if (!online) {
+      showToast('当前处于离线状态，暂时无法保存番茄设置。', 'error')
+      throw new Error('offline')
+    }
     try {
       const saved = await saveStudyPreferences(update)
       setPrefs(saved)
@@ -163,7 +173,7 @@ export function StudyPage() {
       showToast(getErrorMessage(reason, '保存设置失败'), 'error')
       throw reason
     }
-  }, [showToast])
+  }, [online, showToast])
 
   const handleStart = (input: StartSessionInput) => void run('start', async () => { await study.start(input); bump() }, '学习已开始')
   const handlePause = () => void run('pause', async () => { await study.pause(); bump() })
@@ -198,6 +208,7 @@ export function StudyPage() {
     nowMs: study.nowMs,
     taskId,
     busy,
+    online,
     onStart: handleStart,
     onPause: handlePause,
     onResume: handleResume,
@@ -280,6 +291,12 @@ export function StudyPage() {
         </div>
       )}
 
+      {!online && (
+        <div className="mt-5 rounded-xl bg-[var(--rose-soft)] px-4 py-3 text-sm leading-6 text-[var(--rose)]" role="alert">
+          当前处于离线状态，学习计时、签到和签退需要恢复网络后使用。
+        </div>
+      )}
+
       <div className="mt-5 grid min-w-0 items-start gap-5 md:grid-cols-2">
         <div className="grid min-w-0 gap-5">
           {timerSlot}
@@ -292,6 +309,7 @@ export function StudyPage() {
             loading={attendance.loading}
             error={attendance.error}
             nowMs={nowMs}
+            online={online}
             onReload={() => void attendance.reload()}
             onCheckIn={attendance.checkIn}
             onCheckOut={attendance.checkOut}

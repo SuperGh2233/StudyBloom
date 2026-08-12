@@ -121,8 +121,8 @@ export function nextBreakPhase(completedRounds: number, roundsBeforeLongBreak: n
  * truth: breaks never appear here, open segments count up to nowMs, and
  * cross-midnight segments are split per local date (UTC+8). A session counts
  * when it has segment time inside the range; counts / longest / per-task use
- * only that in-range share. Rounds stay attributed to the session's
- * plan_date and only count when that date falls inside the range.
+ * only that in-range share. V0.4.1 rounds use their database completion time;
+ * legacy rounds without provenance stay on plan_date so old totals are kept.
  */
 export function calculateStudyStatistics(
   sessions: StudySession[],
@@ -136,6 +136,9 @@ export function calculateStudyStatistics(
 
   const msByDay = new Map<DateKey, number>();
   const roundsByDay = new Map<DateKey, number>();
+  const roundsInRangeBySession = new Map<string, number>();
+  const markedRoundsBySession = new Map<string, Set<number>>();
+  const seenRoundCompletions = new Set<string>();
   days.forEach((date) => {
     msByDay.set(date, 0);
     roundsByDay.set(date, 0);
@@ -155,11 +158,31 @@ export function calculateStudyStatistics(
       if (kind === 'free') freeMs += ms;
       else focusMs += ms;
     }
-  }
-  for (const session of sessions) {
-    if (session.pomodoroCompletedRounds > 0 && daySet.has(session.planDate)) {
-      roundsByDay.set(session.planDate, (roundsByDay.get(session.planDate) ?? 0) + session.pomodoroCompletedRounds);
+
+    if (segment.segmentKind === 'focus' && segment.pomodoroRound && segment.pomodoroCompletedAt) {
+      const completionMs = Date.parse(segment.pomodoroCompletedAt);
+      if (!Number.isFinite(completionMs)) continue;
+      const completionKey = `${segment.sessionId}:${segment.pomodoroRound}`;
+      const sessionRounds = markedRoundsBySession.get(segment.sessionId) ?? new Set<number>();
+      sessionRounds.add(segment.pomodoroRound);
+      markedRoundsBySession.set(segment.sessionId, sessionRounds);
+      if (seenRoundCompletions.has(completionKey)) continue;
+      seenRoundCompletions.add(completionKey);
+      const completionDate = formatDateKey(completionMs);
+      if (!daySet.has(completionDate)) continue;
+      roundsByDay.set(completionDate, (roundsByDay.get(completionDate) ?? 0) + 1);
+      roundsInRangeBySession.set(segment.sessionId, (roundsInRangeBySession.get(segment.sessionId) ?? 0) + 1);
     }
+  }
+
+  // Old backups/sessions only stored an aggregate count. Preserve the portion
+  // not represented by marked rounds and keep its historical plan_date rule.
+  for (const session of sessions) {
+    const markedCount = markedRoundsBySession.get(session.id)?.size ?? 0;
+    const legacyRounds = Math.max(0, session.pomodoroCompletedRounds - markedCount);
+    if (!legacyRounds || !daySet.has(session.planDate)) continue;
+    roundsByDay.set(session.planDate, (roundsByDay.get(session.planDate) ?? 0) + legacyRounds);
+    roundsInRangeBySession.set(session.id, (roundsInRangeBySession.get(session.id) ?? 0) + legacyRounds);
   }
 
   const sessionsInRange = sessions.filter((session) => (msBySession.get(session.id) ?? 0) > 0);
@@ -172,12 +195,19 @@ export function calculateStudyStatistics(
     const ms = msBySession.get(session.id) ?? 0;
     sessionCount += 1;
     longestMs = Math.max(longestMs, ms);
-    const roundsInRange = daySet.has(session.planDate) ? session.pomodoroCompletedRounds : 0;
-    totalRounds += roundsInRange;
     const key = session.taskTitleSnapshot.trim() || '自由学习';
     const bucket = taskAggregates.get(key) ?? { ms: 0, rounds: 0 };
     bucket.ms += ms;
-    bucket.rounds += roundsInRange;
+    taskAggregates.set(key, bucket);
+  }
+
+  for (const session of sessions) {
+    const rounds = roundsInRangeBySession.get(session.id) ?? 0;
+    if (!rounds) continue;
+    totalRounds += rounds;
+    const key = session.taskTitleSnapshot.trim() || '自由学习';
+    const bucket = taskAggregates.get(key) ?? { ms: 0, rounds: 0 };
+    bucket.rounds += rounds;
     taskAggregates.set(key, bucket);
   }
 

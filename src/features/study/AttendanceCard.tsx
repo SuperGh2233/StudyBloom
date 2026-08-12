@@ -16,6 +16,7 @@ interface AttendanceCardProps {
   loading: boolean
   error: string
   nowMs: number
+  online: boolean
   onReload: () => void
   onCheckIn: (locationId: string, point: GeoPoint) => Promise<AttendanceRecord>
   onCheckOut: (point: GeoPoint) => Promise<AttendanceRecord>
@@ -24,13 +25,13 @@ interface AttendanceCardProps {
   onChanged: () => void
 }
 
-export function AttendanceCard({ locations, openRecord, loading, error, nowMs, onReload, onCheckIn, onCheckOut, onForceClose, onChanged }: AttendanceCardProps) {
+export function AttendanceCard({ locations, openRecord, loading, error, nowMs, online, onReload, onCheckIn, onCheckOut, onForceClose, onChanged }: AttendanceCardProps) {
   const { showToast } = useToast()
   const [locationId, setLocationId] = useState('')
   const [busy, setBusy] = useState('')
   const [distanceError, setDistanceError] = useState('')
   const [forceCloseOpen, setForceCloseOpen] = useState(false)
-  const acting = busy !== ''
+  const acting = busy !== '' || !online
 
   const activeLocations = locations.filter((location) => location.isActive)
 
@@ -130,6 +131,7 @@ export function AttendanceCard({ locations, openRecord, loading, error, nowMs, o
           <button
             type="button"
             className="focus-ring mx-auto mt-2 flex min-h-11 items-center rounded-xl px-3 text-xs text-[var(--muted)] transition hover:text-[var(--rose)]"
+            disabled={acting}
             onClick={() => setForceCloseOpen(true)}
             aria-label="异常结束本次签到记录"
           >异常结束本次记录</button>

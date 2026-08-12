@@ -74,8 +74,13 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   // Recover after PWA backgrounded / screen unlocked / tab refocused.
   useEffect(() => {
     const onVisible = () => { if (document.visibilityState === 'visible' && loadedRef.current) void refresh() }
+    const onOnline = () => { if (loadedRef.current) void refresh() }
     document.addEventListener('visibilitychange', onVisible)
-    return () => document.removeEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onOnline)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onOnline)
+    }
   }, [refresh])
 
   // 1-second view tick + foreground catch-up when a phase end time passes.

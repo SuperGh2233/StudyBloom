@@ -164,12 +164,20 @@ export const parseExportStudySessions = (value: unknown): ExportStudySession[] =
 export const parseExportStudySessionSegments = (value: unknown): ExportStudySessionSegment[] => requireArray(value).map((item) => {
   const message = '计时片段数据格式不正确'
   if (!isObject(item) || (item.segmentKind !== 'free' && item.segmentKind !== 'focus')) throw new AppError(message, 'VALIDATION')
+  const pomodoroRound = nullableNonNegativeInt(item.pomodoroRound, message)
+  const pomodoroCompletedAt = nullableIso(item.pomodoroCompletedAt, message)
+  const endedAt = nullableIso(item.endedAt, message)
+  if (pomodoroRound === 0 || (pomodoroCompletedAt && (item.segmentKind !== 'focus' || !pomodoroRound || !endedAt))) {
+    throw new AppError(message, 'VALIDATION')
+  }
   return {
     id: requireUuid(item.id, message),
     sessionId: requireUuid(item.sessionId, message),
     segmentKind: item.segmentKind as SegmentKind,
+    pomodoroRound,
+    pomodoroCompletedAt,
     startedAt: requireIso(item.startedAt, message),
-    endedAt: nullableIso(item.endedAt, message),
+    endedAt,
   }
 })
 
@@ -281,7 +289,15 @@ export async function exportAllDataJson(): Promise<string> {
         phaseEndsAt: row.phase_ends_at,
         phaseRemainingSeconds: row.phase_remaining_seconds,
       })),
-      studySessionSegments: (segmentRes.data as SegmentRow[]).map((row) => ({ id: row.id, sessionId: row.session_id, segmentKind: row.segment_kind, startedAt: row.started_at, endedAt: row.ended_at })),
+      studySessionSegments: (segmentRes.data as SegmentRow[]).map((row) => ({
+        id: row.id,
+        sessionId: row.session_id,
+        segmentKind: row.segment_kind,
+        pomodoroRound: row.pomodoro_round,
+        pomodoroCompletedAt: row.pomodoro_completed_at,
+        startedAt: row.started_at,
+        endedAt: row.ended_at,
+      })),
       studyPreferences: preferenceRow ? {
         defaultMode: preferenceRow.default_mode,
         focusSeconds: preferenceRow.focus_seconds,

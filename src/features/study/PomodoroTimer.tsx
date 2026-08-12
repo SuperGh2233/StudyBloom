@@ -13,6 +13,7 @@ interface PomodoroTimerProps {
   prefs: StudyPreferences
   taskId: string | null
   busy: string
+  online: boolean
   onStart: (input: StartSessionInput) => void
   onPause: () => void
   onResume: () => void
@@ -34,8 +35,8 @@ export function PomodoroTimer(props: PomodoroTimerProps) {
 // Live session card
 // ---------------------------------------------------------------------------
 
-function ActivePomodoro({ session, segments, nowMs, busy, onPause, onResume, onFinish, onStartBreak, onSkipBreak, onStartNextFocus, onEndRound }: PomodoroTimerProps & { session: StudySession }) {
-  const acting = busy !== ''
+function ActivePomodoro({ session, segments, nowMs, busy, online, onPause, onResume, onFinish, onStartBreak, onSkipBreak, onStartNextFocus, onEndRound }: PomodoroTimerProps & { session: StudySession }) {
+  const acting = busy !== '' || !online
   const onBreak = session.currentPhase === 'short_break' || session.currentPhase === 'long_break'
   const waiting = session.status === 'waiting'
   const paused = session.status === 'paused'
@@ -120,10 +121,10 @@ const FIELDS: { key: DraftKey; label: string; hint: string }[] = [
   { key: 'rounds', label: '长休息间隔（轮）', hint: '2–8 轮' },
 ]
 
-function PomodoroConfig({ prefs, taskId, busy, onStart, onPrefsSave }: PomodoroTimerProps) {
+function PomodoroConfig({ prefs, taskId, busy, online, onStart, onPrefsSave }: PomodoroTimerProps) {
   const [draft, setDraft] = useState<Draft>(() => draftFromPrefs(prefs))
   useEffect(() => { setDraft(draftFromPrefs(prefs)) }, [prefs])
-  const acting = busy !== ''
+  const acting = busy !== '' || !online
 
   const persist = (update: StudyPreferencesUpdate) => {
     void onPrefsSave(update).catch(() => setDraft(draftFromPrefs(prefs)))

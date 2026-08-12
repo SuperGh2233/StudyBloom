@@ -10,6 +10,7 @@ interface StudyTimerProps {
   nowMs: number
   taskId: string | null
   busy: string
+  online: boolean
   onStart: (input: StartSessionInput) => void
   onPause: () => void
   onResume: () => void
@@ -17,8 +18,8 @@ interface StudyTimerProps {
 }
 
 /** Free-timing card: start screen when idle, live elapsed clock when running. */
-export function StudyTimer({ session, segments, nowMs, taskId, busy, onStart, onPause, onResume, onFinish }: StudyTimerProps) {
-  const acting = busy !== ''
+export function StudyTimer({ session, segments, nowMs, taskId, busy, online, onStart, onPause, onResume, onFinish }: StudyTimerProps) {
+  const acting = busy !== '' || !online
 
   if (!session) {
     return (

@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabase } from '../lib/supabase'
 import { requireUser } from './auth'
 import { parseExportAttendanceRecords, parseExportStudyLocations, parseExportStudyPreferences, parseExportStudySessionSegments, parseExportStudySessions, parseUuid } from './backup'
-import type { CopyMode, Database, DateKey, DateRange, ExportAttendanceRecord, ExportPlanDay, ExportStudyLocation, ExportStudyPreferences, ExportStudySession, ExportStudySessionSegment, ExportTask, ImportResult, StudyBloomExport } from '../types'
+import type { CopyMode, Database, DateKey, DateRange, ExportAttendanceRecord, ExportPlanDay, ExportStudyLocation, ExportStudyPreferences, ExportStudySession, ExportStudySessionSegment, ExportTask, ImportResult, Json, StudyBloomExport } from '../types'
 import { assertDateKey, enumerateDateKeys } from '../utils/date'
 import { AppError, toAppError } from '../utils/errorMessage'
 
@@ -104,9 +104,10 @@ const EMPTY_STUDY_RESTORE: StudyRestore = { locations: [], attendance: [], sessi
  * Returns the number of rows actually inserted.
  */
 async function restoreStudyRecords(client: SupabaseClient<Database>, userId: string, study: StudyRestore, taskIds: Set<string>): Promise<number> {
+  const defaultLocationId = study.locations.find((location) => location.isDefault)?.id ?? null
   const locationRows = study.locations.map((location) => ({
     id: location.id, user_id: userId, name: location.name, latitude: location.latitude, longitude: location.longitude,
-    radius_m: location.radiusM, is_active: location.isActive, is_default: location.isDefault,
+    radius_m: location.radiusM, is_active: location.isActive, is_default: false,
   }))
   const locationIds = new Set(study.locations.map((location) => location.id))
   const attendanceRows = study.attendance
@@ -139,7 +140,15 @@ async function restoreStudyRecords(client: SupabaseClient<Database>, userId: str
   const sessionIds = new Set(study.sessions.map((session) => session.id))
   const segmentRows = study.segments
     .filter((segment) => sessionIds.has(segment.sessionId))
-    .map((segment) => ({ id: segment.id, user_id: userId, session_id: segment.sessionId, segment_kind: segment.segmentKind, started_at: segment.startedAt, ended_at: segment.endedAt }))
+    .map((segment) => ({
+      id: segment.id,
+      session_id: segment.sessionId,
+      segment_kind: segment.segmentKind,
+      pomodoro_round: segment.pomodoroRound ?? null,
+      pomodoro_completed_at: segment.pomodoroCompletedAt ?? null,
+      started_at: segment.startedAt,
+      ended_at: segment.endedAt,
+    }))
 
   // 与部分唯一索引的冲突已由上方预检拦截；ignoreDuplicates 保证重复导入幂等。
   let restored = 0
@@ -148,20 +157,14 @@ async function restoreStudyRecords(client: SupabaseClient<Database>, userId: str
     if (error) throw error
     restored += data?.length ?? 0
   }
-  if (attendanceRows.length) {
-    const { data, error } = await client.from('attendance_records').upsert(attendanceRows, { onConflict: 'id', ignoreDuplicates: true }).select('id')
+  if (attendanceRows.length || sessionRows.length || segmentRows.length) {
+    const { data, error } = await client.rpc('restore_study_records', {
+      p_attendance: attendanceRows as unknown as Json,
+      p_sessions: sessionRows as unknown as Json,
+      p_segments: segmentRows as unknown as Json,
+    })
     if (error) throw error
-    restored += data?.length ?? 0
-  }
-  if (sessionRows.length) {
-    const { data, error } = await client.from('study_sessions').upsert(sessionRows, { onConflict: 'id', ignoreDuplicates: true }).select('id')
-    if (error) throw error
-    restored += data?.length ?? 0
-  }
-  if (segmentRows.length) {
-    const { data, error } = await client.from('study_session_segments').upsert(segmentRows, { onConflict: 'id', ignoreDuplicates: true }).select('id')
-    if (error) throw error
-    restored += data?.length ?? 0
+    restored += data ?? 0
   }
   if (study.preferences) {
     const { error } = await client.from('study_preferences').upsert({
@@ -175,6 +178,12 @@ async function restoreStudyRecords(client: SupabaseClient<Database>, userId: str
       vibration_enabled: study.preferences.vibrationEnabled,
     }, { onConflict: 'user_id' })
     if (error) throw error
+  }
+  if (defaultLocationId) {
+    const { error: clearError } = await client.from('study_locations').update({ is_default: false }).eq('user_id', userId).eq('is_default', true)
+    if (clearError) throw clearError
+    const { error: defaultError } = await client.from('study_locations').update({ is_default: true }).eq('user_id', userId).eq('id', defaultLocationId)
+    if (defaultError) throw defaultError
   }
   return restored
 }

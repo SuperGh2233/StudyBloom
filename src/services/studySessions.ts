@@ -39,6 +39,8 @@ export const mapStudySegment = (row: SegmentRow): StudySessionSegment => ({
   userId: row.user_id,
   sessionId: row.session_id,
   segmentKind: row.segment_kind,
+  pomodoroRound: row.pomodoro_round,
+  pomodoroCompletedAt: row.pomodoro_completed_at,
   startedAt: row.started_at,
   endedAt: row.ended_at,
   createdAt: row.created_at,

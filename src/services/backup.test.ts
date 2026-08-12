@@ -49,7 +49,7 @@ const validV2 = {
     phaseEndsAt: null,
     phaseRemainingSeconds: null,
   }],
-  studySessionSegments: [{ id: SEGMENT_ID, sessionId: SESSION_ID, segmentKind: 'free', startedAt: '2026-08-10T09:05:00+08:00', endedAt: '2026-08-10T09:53:00+08:00' }],
+  studySessionSegments: [{ id: SEGMENT_ID, sessionId: SESSION_ID, segmentKind: 'free', pomodoroRound: null, pomodoroCompletedAt: null, startedAt: '2026-08-10T09:05:00+08:00', endedAt: '2026-08-10T09:53:00+08:00' }],
   studyPreferences: { defaultMode: 'pomodoro', focusSeconds: 1500, shortBreakSeconds: 300, longBreakSeconds: 900, roundsBeforeLongBreak: 4, soundEnabled: false, vibrationEnabled: true },
 }
 
@@ -80,6 +80,7 @@ describe('备份导入校验', () => {
     expect(result.studySessions[0].taskId).toBe(TASK_ID)
     expect(result.studySessions[0].attendanceRecordId).toBe(ATTENDANCE_ID)
     expect(result.studySessionSegments[0].sessionId).toBe(SESSION_ID)
+    expect(result.studySessionSegments[0].pomodoroRound).toBeNull()
     expect(result.studyPreferences?.roundsBeforeLongBreak).toBe(4)
   })
 
@@ -102,4 +103,3 @@ describe('备份导入校验', () => {
     expect(v1.version).toBe(1)
   })
 })
-

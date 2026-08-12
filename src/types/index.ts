@@ -214,6 +214,10 @@ export interface StudySessionSegment {
   userId: string;
   sessionId: string;
   segmentKind: SegmentKind;
+  /** Database-assigned round number for Pomodoro focus fragments. */
+  pomodoroRound: number | null;
+  /** Database phase-end time when this round completed normally. */
+  pomodoroCompletedAt: string | null;
   startedAt: string;
   endedAt: string | null;
   createdAt: string;
@@ -349,6 +353,10 @@ export interface ExportStudySessionSegment {
   id: string;
   sessionId: string;
   segmentKind: SegmentKind;
+  /** Optional for compatibility with backups created before V0.4.1. */
+  pomodoroRound?: number | null;
+  /** Optional for compatibility with backups created before V0.4.1. */
+  pomodoroCompletedAt?: string | null;
   startedAt: string;
   endedAt: string | null;
 }
@@ -726,6 +734,8 @@ export interface Database {
           user_id: string;
           session_id: string;
           segment_kind: 'free' | 'focus';
+          pomodoro_round: number | null;
+          pomodoro_completed_at: string | null;
           started_at: string;
           ended_at: string | null;
           created_at: string;
@@ -735,6 +745,8 @@ export interface Database {
           user_id: string;
           session_id: string;
           segment_kind: 'free' | 'focus';
+          pomodoro_round?: number | null;
+          pomodoro_completed_at?: string | null;
           started_at?: string;
           ended_at?: string | null;
           created_at?: string;
@@ -744,6 +756,8 @@ export interface Database {
           user_id?: string;
           session_id?: string;
           segment_kind?: 'free' | 'focus';
+          pomodoro_round?: number | null;
+          pomodoro_completed_at?: string | null;
           started_at?: string;
           ended_at?: string | null;
           created_at?: string;
@@ -843,9 +857,12 @@ export interface Database {
         Args: { p_session_id: string };
         Returns: Database['public']['Tables']['study_sessions']['Row'];
       };
+      restore_study_records: {
+        Args: { p_attendance: Json; p_sessions: Json; p_segments: Json };
+        Returns: number;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
 }
-

@@ -132,9 +132,38 @@ drop function if exists public.generate_friend_code();
    ```
    （应返回空。）
 
+### V0.4.1 数据可信性迁移
+
+已有线上项目在完成上面的学习模块迁移后，继续执行 `migrations/20260812000000_harden_study_data_integrity.sql`。新项目直接执行最新 `schema.sql` 即已包含这部分定义。
+
+V0.4.1 会：
+
+- 撤销浏览器对 `attendance_records`、`study_sessions`、`study_session_segments` 的直接写权限，只保留本人读取。
+- 将签到与学习状态 RPC 改为经过 `auth.uid()` 限定的 `security definer` 函数。
+- 为完整备份提供校验型 `restore_study_records` RPC。
+- 按所有计时片段总和判断会话是否达到一分钟。
+- 记录番茄轮次和数据库完成时间，跨午夜轮数归入实际完成日期。
+- 由数据库根据已完成轮数决定短休息或长休息。
+- 限制每个用户最多一个默认学习地点。
+
+执行后用登录账号的 access token 直接向三张核心表发起 INSERT/UPDATE/DELETE，请求应返回权限错误；页面中的正常签到、计时和完整备份恢复应继续成功。
+
+可在 SQL Editor 确认权限：
+
+```sql
+select grantee, table_name, privilege_type
+from information_schema.role_table_grants
+where table_schema = 'public'
+  and grantee = 'authenticated'
+  and table_name in ('attendance_records','study_sessions','study_session_segments')
+order by table_name, privilege_type;
+```
+
+三张表对 `authenticated` 应只剩 `SELECT`，状态写入由 RPC 的函数所有者完成。
+
 ### 权限与验证模型
 
-- 五张新表全部为「仅本人」策略：`auth.uid() = user_id`，逐操作限定。**好友（calendar_shares）不获得任何新表的读取权限**——精确经纬度、签到记录、学习时长明细永不对好友开放。
+- 五张新表全部为「仅本人」策略：`auth.uid() = user_id`。V0.4.1 后三张核心记录表额外撤销浏览器直接写权限。**好友（calendar_shares）不获得任何新表的读取权限**——精确经纬度、签到记录、学习时长明细永不对好友开放。
 - 由于外键校验会绕过 RLS，写入策略额外用 `exists(...)` 校验所引用的父行（地点/会话/任务/签到记录）同属当前用户，与好友系统迁移的做法一致。
 - 签到/签退由 RPC 在服务端用 Haversine 复核距离、校验精度（≤150 米）并写入数据库时间；前端展示的距离只是预检。
 - 状态切换（开始/暂停/继续/结束、番茄阶段推进）全部在单个事务内完成并对行加锁（`for update`）；`sync_pomodoro_session` 幂等，页面恢复/多设备场景重复调用安全。
