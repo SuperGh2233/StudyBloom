@@ -9,6 +9,7 @@ import { DesktopCalendar } from '../features/calendar/DesktopCalendar'
 import { MobileCalendarView } from '../features/calendar/MobileCalendar'
 import { DayEditor } from '../features/tasks/DayEditor'
 import { useMonthPlans } from '../hooks/useMonthPlans'
+import { useTaskStudySummaries } from '../hooks/useTaskStudySummaries'
 import { todayDateKey } from '../utils/date'
 import { getErrorMessage } from '../utils/errorMessage'
 
@@ -17,6 +18,7 @@ export function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(() => todayDateKey())
   const [editorOpen, setEditorOpen] = useState(false)
   const data = useMonthPlans(month)
+  const studySummaries = useTaskStudySummaries(data.tasks.map((task) => task.id))
   const { showToast } = useToast()
   const toggleFromCalendar = (id: string, completed: boolean) => data.toggleTask(id, completed).catch((error) => { showToast(getErrorMessage(error, '更新任务失败'), 'error') })
   const completed = useMemo(() => data.tasks.filter((task) => task.completed).length, [data.tasks])
@@ -47,7 +49,7 @@ export function CalendarPage() {
       <div className="relative min-w-0">
         {data.loading && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--surface)_72%,transparent)] backdrop-blur-[2px]" role="status"><span className="rounded-xl bg-[var(--surface)] px-4 py-3 text-sm font-semibold shadow">正在加载本月计划...</span></div>}
         <div className="lg:hidden">
-          <MobileCalendarView month={month} tasksByDate={data.tasksByDate} planDaysByDate={data.planDaysByDate} selectedDate={selectedDate} onSelect={setSelectedDate} onToggle={toggleFromCalendar} onOpenEditor={openEditor} />
+          <MobileCalendarView month={month} tasksByDate={data.tasksByDate} planDaysByDate={data.planDaysByDate} studySummaries={studySummaries} selectedDate={selectedDate} onSelect={setSelectedDate} onToggle={toggleFromCalendar} onOpenEditor={openEditor} />
         </div>
         <div className="hidden lg:block">
           <DesktopCalendar month={month} tasksByDate={data.tasksByDate} planDaysByDate={data.planDaysByDate} selectedDate={selectedDate} onSelect={openEditor} onToggle={toggleFromCalendar} />
@@ -60,6 +62,7 @@ export function CalendarPage() {
         open={editorOpen}
         date={selectedDate}
         tasks={selectedTasks}
+        studySummaries={studySummaries}
         planDay={selectedPlanDay}
         onClose={() => setEditorOpen(false)}
         onAdd={data.addTask}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import type { CopyMode, PlanDay, Task } from '../types'
+import type { CopyMode, PlanDay, Task, TaskUpdate } from '../types'
 import * as taskService from '../services/tasks'
 import * as planDayService from '../services/planDays'
 import { copyTasks } from '../services/taskCopy'
@@ -32,15 +32,15 @@ export function useMonthPlans(monthDate: Date) {
   }, [tasks])
   const planDaysByDate = useMemo(() => new Map(planDays.map((day) => [day.planDate, day])), [planDays])
 
-  const addTask = useCallback(async (planDate: string, title: string) => {
-    const created = await taskService.createTask({ planDate, title, sortOrder: (tasksByDate.get(planDate) ?? []).length })
+  const addTask = useCallback(async (planDate: string, title: string, estimatedMinutes: number | null = null) => {
+    const created = await taskService.createTask({ planDate, title, estimatedMinutes, sortOrder: (tasksByDate.get(planDate) ?? []).length })
     setTasks((items) => [...items, created]); return created
   }, [tasksByDate])
 
-  const updateTask = useCallback(async (id: string, title: string) => {
+  const updateTask = useCallback(async (id: string, update: TaskUpdate) => {
     const previous = tasks
-    setTasks((items) => items.map((task) => task.id === id ? { ...task, title } : task))
-    try { const saved = await taskService.updateTask(id, { title }); setTasks((items) => items.map((task) => task.id === id ? saved : task)) }
+    setTasks((items) => items.map((task) => task.id === id ? { ...task, ...update } : task))
+    try { const saved = await taskService.updateTask(id, update); setTasks((items) => items.map((task) => task.id === id ? saved : task)) }
     catch (reason) { setTasks(previous); throw reason }
   }, [tasks])
 

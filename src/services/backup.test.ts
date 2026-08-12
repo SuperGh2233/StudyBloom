@@ -10,7 +10,7 @@ const SEGMENT_ID = '4e5f6a7b-8c9d-4e0f-8a1b-3c4d5e6f7a8b'
 const validV2 = {
   version: 2,
   exportedAt: '2026-08-11T00:00:00Z',
-  tasks: [{ id: TASK_ID, planDate: '2026-08-10', title: '背单词', completed: false, sortOrder: 0 }],
+  tasks: [{ id: TASK_ID, planDate: '2026-08-10', title: '背单词', completed: false, sortOrder: 0, estimatedMinutes: 45 }],
   planDays: [{ planDate: '2026-08-10', isRestDay: false, note: '' }],
   studyLocations: [{ id: LOCATION_ID, name: '图书馆', latitude: 31.23, longitude: 121.47, radiusM: 200, isActive: true, isDefault: true }],
   attendanceRecords: [{
@@ -48,6 +48,7 @@ const validV2 = {
     phaseStartedAt: null,
     phaseEndsAt: null,
     phaseRemainingSeconds: null,
+    reflection: '今天记得更牢了',
   }],
   studySessionSegments: [{ id: SEGMENT_ID, sessionId: SESSION_ID, segmentKind: 'free', pomodoroRound: null, pomodoroCompletedAt: null, startedAt: '2026-08-10T09:05:00+08:00', endedAt: '2026-08-10T09:53:00+08:00' }],
   studyPreferences: { defaultMode: 'pomodoro', focusSeconds: 1500, shortBreakSeconds: 300, longBreakSeconds: 900, roundsBeforeLongBreak: 4, soundEnabled: false, vibrationEnabled: true },
@@ -75,10 +76,12 @@ describe('备份导入校验', () => {
     expect(result.version).toBe(2)
     if (result.version !== 2) return
     expect(result.tasks[0].id).toBe(TASK_ID)
+    expect(result.tasks[0].estimatedMinutes).toBe(45)
     expect(result.studyLocations).toHaveLength(1)
     expect(result.attendanceRecords[0].locationId).toBe(LOCATION_ID)
     expect(result.studySessions[0].taskId).toBe(TASK_ID)
     expect(result.studySessions[0].attendanceRecordId).toBe(ATTENDANCE_ID)
+    expect(result.studySessions[0].reflection).toBe('今天记得更牢了')
     expect(result.studySessionSegments[0].sessionId).toBe(SESSION_ID)
     expect(result.studySessionSegments[0].pomodoroRound).toBeNull()
     expect(result.studyPreferences?.roundsBeforeLongBreak).toBe(4)
@@ -101,5 +104,11 @@ describe('备份导入校验', () => {
     expect(() => validateImportData(JSON.stringify({ ...validV2, version: 3 }))).toThrow('不支持的导入文件版本')
     const v1 = validateImportData(JSON.stringify({ version: 1, exportedAt: '2026-08-04T00:00:00Z', tasks: [{ planDate: '2026-08-04', title: '背单词', sortOrder: 0 }], planDays: [] }))
     expect(v1.version).toBe(1)
+    expect(v1.tasks[0].estimatedMinutes).toBeNull()
+  })
+
+  it('拒绝非法预计时长和过长学习感受', () => {
+    expect(() => validateImportData(JSON.stringify({ ...validV2, tasks: [{ ...validV2.tasks[0], estimatedMinutes: 0 }] }))).toThrow('任务预计时长格式不正确')
+    expect(() => validateImportData(JSON.stringify({ ...validV2, studySessions: [{ ...validV2.studySessions[0], reflection: '学'.repeat(501) }] }))).toThrow('学习记录不能超过 500 个字符')
   })
 })

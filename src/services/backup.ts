@@ -83,6 +83,11 @@ const sanitizeTasks = (value: unknown): ExportTask[] => requireArray(value).map(
   const sortOrder = Number(item.sortOrder)
   if (!title || title.length > 100 || !Number.isInteger(sortOrder) || sortOrder < 0) throw new AppError('任务数据格式不正确', 'VALIDATION')
   const task: ExportTask = { planDate: assertDateKey(item.planDate), title, completed: Boolean(item.completed), sortOrder }
+  if (item.estimatedMinutes !== undefined && item.estimatedMinutes !== null) {
+    const estimatedMinutes = Number(item.estimatedMinutes)
+    if (!Number.isInteger(estimatedMinutes) || estimatedMinutes < 1 || estimatedMinutes > 1440) throw new AppError('任务预计时长格式不正确', 'VALIDATION')
+    task.estimatedMinutes = estimatedMinutes
+  } else task.estimatedMinutes = null
   if (item.id !== undefined) task.id = requireUuid(item.id, '任务数据格式不正确')
   return task
 })
@@ -138,6 +143,8 @@ export const parseExportStudySessions = (value: unknown): ExportStudySession[] =
   if (!isObject(item) || (item.mode !== 'free' && item.mode !== 'pomodoro') || !isSessionStatus(item.status)) throw new AppError(message, 'VALIDATION')
   if (item.currentPhase !== undefined && item.currentPhase !== null && item.currentPhase !== 'focus' && item.currentPhase !== 'short_break' && item.currentPhase !== 'long_break') throw new AppError(message, 'VALIDATION')
   if (typeof item.taskTitleSnapshot !== 'string') throw new AppError(message, 'VALIDATION')
+  const reflection = typeof item.reflection === 'string' ? item.reflection.trim() : ''
+  if (reflection.length > 500) throw new AppError('学习记录不能超过 500 个字符', 'VALIDATION')
   return {
     id: requireUuid(item.id, message),
     taskId: nullableUuid(item.taskId, message),
@@ -158,6 +165,7 @@ export const parseExportStudySessions = (value: unknown): ExportStudySession[] =
     phaseStartedAt: nullableIso(item.phaseStartedAt, message),
     phaseEndsAt: nullableIso(item.phaseEndsAt, message),
     phaseRemainingSeconds: nullableNonNegativeInt(item.phaseRemainingSeconds, message),
+    reflection,
   }
 })
 
@@ -250,7 +258,7 @@ export async function exportAllDataJson(): Promise<string> {
     const payload: StudyBloomExportV2 = {
       version: 2,
       exportedAt: new Date().toISOString(),
-      tasks: (taskRes.data as TaskRow[]).map((row) => ({ id: row.id, planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order })),
+      tasks: (taskRes.data as TaskRow[]).map((row) => ({ id: row.id, planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order, estimatedMinutes: row.estimated_minutes })),
       planDays: (dayRes.data as PlanDayRow[]).map((row) => ({ planDate: row.plan_date, isRestDay: row.is_rest_day, note: row.note ?? '' })),
       studyLocations: (locationRes.data as LocationRow[]).map((row) => ({ id: row.id, name: row.name, latitude: row.latitude, longitude: row.longitude, radiusM: row.radius_m, isActive: row.is_active, isDefault: row.is_default })),
       attendanceRecords: (attendanceRes.data as AttendanceRow[]).map((row) => ({
@@ -288,6 +296,7 @@ export async function exportAllDataJson(): Promise<string> {
         phaseStartedAt: row.phase_started_at,
         phaseEndsAt: row.phase_ends_at,
         phaseRemainingSeconds: row.phase_remaining_seconds,
+        reflection: row.reflection,
       })),
       studySessionSegments: (segmentRes.data as SegmentRow[]).map((row) => ({
         id: row.id,

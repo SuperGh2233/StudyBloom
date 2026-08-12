@@ -15,6 +15,7 @@ export interface Task {
   title: string;
   completed: boolean;
   sortOrder: number;
+  estimatedMinutes: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,6 +35,7 @@ export interface TaskInput {
   title: string;
   completed?: boolean;
   sortOrder?: number;
+  estimatedMinutes?: number | null;
 }
 
 export interface TaskUpdate {
@@ -41,6 +43,7 @@ export interface TaskUpdate {
   title?: string;
   completed?: boolean;
   sortOrder?: number;
+  estimatedMinutes?: number | null;
 }
 
 export interface PlanDayInput {
@@ -205,6 +208,7 @@ export interface StudySession {
   phaseStartedAt: string | null;
   phaseEndsAt: string | null;
   phaseRemainingSeconds: number | null;
+  reflection: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -286,6 +290,13 @@ export interface StudyTimeStatistics {
   byTask: StudyTaskPoint[];
 }
 
+export interface TaskStudySummary {
+  taskId: string;
+  totalSeconds: number;
+  sessionCount: number;
+  lastStudiedAt: string | null;
+}
+
 export interface ExportTask {
   /** Present in version 2 backups so study sessions keep their task link. */
   id?: string;
@@ -293,6 +304,8 @@ export interface ExportTask {
   title: string;
   completed: boolean;
   sortOrder: number;
+  /** Optional for compatibility with backups created before V0.5.0. */
+  estimatedMinutes?: number | null;
 }
 
 export interface ExportPlanDay {
@@ -347,6 +360,8 @@ export interface ExportStudySession {
   phaseStartedAt: string | null;
   phaseEndsAt: string | null;
   phaseRemainingSeconds: number | null;
+  /** Optional for compatibility with backups created before V0.5.0. */
+  reflection?: string;
 }
 
 export interface ExportStudySessionSegment {
@@ -418,6 +433,7 @@ export interface Database {
           title: string;
           completed: boolean;
           sort_order: number;
+          estimated_minutes: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -428,6 +444,7 @@ export interface Database {
           title: string;
           completed?: boolean;
           sort_order?: number;
+          estimated_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -438,6 +455,7 @@ export interface Database {
           title?: string;
           completed?: boolean;
           sort_order?: number;
+          estimated_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -675,6 +693,7 @@ export interface Database {
           phase_started_at: string | null;
           phase_ends_at: string | null;
           phase_remaining_seconds: number | null;
+          reflection: string;
           created_at: string;
           updated_at: string;
         };
@@ -699,6 +718,7 @@ export interface Database {
           phase_started_at?: string | null;
           phase_ends_at?: string | null;
           phase_remaining_seconds?: number | null;
+          reflection?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -723,6 +743,7 @@ export interface Database {
           phase_started_at?: string | null;
           phase_ends_at?: string | null;
           phase_remaining_seconds?: number | null;
+          reflection?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -859,6 +880,14 @@ export interface Database {
       };
       restore_study_records: {
         Args: { p_attendance: Json; p_sessions: Json; p_segments: Json };
+        Returns: number;
+      };
+      save_study_session_reflection: {
+        Args: { p_session_id: string; p_reflection: string };
+        Returns: Database['public']['Tables']['study_sessions']['Row'];
+      };
+      restore_study_reflections: {
+        Args: { p_sessions: Json };
         Returns: number;
       };
     };

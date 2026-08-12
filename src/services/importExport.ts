@@ -35,6 +35,11 @@ const parseTasks = (value: unknown): ExportTask[] => {
     const sortOrder = item.sortOrder === undefined ? 0 : Number(item.sortOrder)
     if (!Number.isInteger(sortOrder) || sortOrder < 0) throw new AppError('导入任务排序不正确', 'VALIDATION')
     const task: ExportTask = { planDate: parseDate(item.planDate), title, completed: Boolean(item.completed), sortOrder }
+    if (item.estimatedMinutes !== undefined && item.estimatedMinutes !== null) {
+      const estimatedMinutes = Number(item.estimatedMinutes)
+      if (!Number.isInteger(estimatedMinutes) || estimatedMinutes < 1 || estimatedMinutes > 1440) throw new AppError('导入任务预计时长不正确', 'VALIDATION')
+      task.estimatedMinutes = estimatedMinutes
+    } else task.estimatedMinutes = null
     if (item.id !== undefined) {
       const id = parseUuid(item.id)
       if (!id) throw new AppError('导入任务 ID 不正确', 'VALIDATION')
@@ -78,7 +83,7 @@ export async function exportPlan(range: DateRange): Promise<StudyBloomExport> {
     return {
       version: 1,
       exportedAt: new Date().toISOString(),
-      tasks: (taskRows as TaskRow[]).map((row) => ({ planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order })),
+      tasks: (taskRows as TaskRow[]).map((row) => ({ planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order, estimatedMinutes: row.estimated_minutes })),
       planDays: (planRows as PlanDayRow[]).map((row) => ({ planDate: row.plan_date, isRestDay: row.is_rest_day, note: row.note ?? '' })),
     }
   } catch (error) { throw toAppError(error, '导出计划失败') }
@@ -165,6 +170,12 @@ async function restoreStudyRecords(client: SupabaseClient<Database>, userId: str
     })
     if (error) throw error
     restored += data ?? 0
+  }
+  if (study.sessions.length) {
+    const { error } = await client.rpc('restore_study_reflections', {
+      p_sessions: study.sessions.map((session) => ({ id: session.id, reflection: session.reflection ?? '' })) as unknown as Json,
+    })
+    if (error) throw error
   }
   if (study.preferences) {
     const { error } = await client.from('study_preferences').upsert({
@@ -269,7 +280,7 @@ export async function importPlan(input: string | StudyBloomExport, options: Impo
         const offset = offsets.get(task.planDate) ?? 0
         if (mode === 'append') offsets.set(task.planDate, offset + 1)
         // id only present in version 2 files; keeping it lets sessions stay linked to their task.
-        return { id: task.id, user_id: user.id, plan_date: task.planDate, title: task.title, completed: task.completed, sort_order: mode === 'append' ? offset : task.sortOrder }
+        return { id: task.id, user_id: user.id, plan_date: task.planDate, title: task.title, completed: task.completed, sort_order: mode === 'append' ? offset : task.sortOrder, estimated_minutes: task.estimatedMinutes ?? null }
       })
       // v2 行带 id：upsert + ignoreDuplicates 让重复导入幂等；v1 无 id 走原 insert。
       if (tasks.every((task) => Boolean(task.id))) {

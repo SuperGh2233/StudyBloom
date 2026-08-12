@@ -4,12 +4,12 @@ import { Clock, Hourglass, RefreshCw, Timer } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Button } from '../components/Button'
-import { ConfirmDialog } from '../components/ConfirmDialog'
 import { LoadingState } from '../components/LoadingState'
 import { useToast } from '../components/ToastProvider'
 import { AttendanceCard } from '../features/study/AttendanceCard'
 import { PomodoroTimer } from '../features/study/PomodoroTimer'
 import { StudyRecords } from '../features/study/StudyRecords'
+import { StudySummarySheet } from '../features/study/StudySummarySheet'
 import { StudyTimer } from '../features/study/StudyTimer'
 import { TaskPicker } from '../features/study/TaskPicker'
 import { useAttendance } from '../hooks/useAttendance'
@@ -21,6 +21,7 @@ import {
   fetchStudyDataForRange,
   getStudyPreferences,
   saveStudyPreferences,
+  saveStudySessionReflection,
   type StartSessionInput,
 } from '../services/studySessions'
 import { setTaskCompleted } from '../services/tasks'
@@ -34,7 +35,7 @@ import type {
 } from '../types'
 import { todayDateKey } from '../utils/date'
 import { getErrorMessage } from '../utils/errorMessage'
-import { calculateStudyStatistics, formatDurationHuman } from '../utils/studyDuration'
+import { calculateStudyStatistics, formatDurationHuman, sessionElapsedSeconds } from '../utils/studyDuration'
 
 /** 880Hz / 0.15s / gain 0.08 soft beep; AudioContext is created lazily per call. */
 function playPhaseEndBeep() {
@@ -83,7 +84,7 @@ export function StudyPage() {
   const [mode, setMode] = useState<StudyMode>('free')
   const [taskId, setTaskId] = useState<string | null>(() => searchParams.get('task'))
   const [busy, setBusy] = useState('')
-  const [taskDialog, setTaskDialog] = useState<StudySession | null>(null)
+  const [summary, setSummary] = useState<{ session: StudySession; sessionSeconds: number; todaySeconds: number } | null>(null)
   const [recordsVersion, setRecordsVersion] = useState(0)
   const [todayData, setTodayData] = useState<{ sessions: StudySession[]; segments: StudySessionSegment[] }>({ sessions: [], segments: [] })
   const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord[]>([])
@@ -168,7 +169,7 @@ export function StudyPage() {
     try {
       const saved = await saveStudyPreferences(update)
       setPrefs(saved)
-      showToast('番茄设置已保存')
+      showToast('学习设置已保存')
     } catch (reason) {
       showToast(getErrorMessage(reason, '保存设置失败'), 'error')
       throw reason
@@ -179,20 +180,43 @@ export function StudyPage() {
   const handlePause = () => void run('pause', async () => { await study.pause(); bump() })
   const handleResume = () => void run('resume', async () => { await study.resume(); bump() })
   const handleFinish = () => void run('finish', async () => {
+    const segments = study.segments
+    const now = study.nowMs
     const final = await study.finish()
     bump()
-    if (final && final.taskId) setTaskDialog(final)
+    if (!final) return
+    const today = todayDateKey()
+    const currentStats = calculateStudyStatistics(
+      [...todayData.sessions.filter((session) => session.id !== final.id), final],
+      segments,
+      { startDate: today, endDate: today },
+      now,
+    )
+    setSummary({
+      session: final,
+      sessionSeconds: sessionElapsedSeconds(final, segments, now),
+      todaySeconds: currentStats.totalSeconds,
+    })
   })
   const handleStartBreak = (phase: 'short_break' | 'long_break') => void run('break', async () => { await study.startBreak(phase); bump() })
   const handleSkipBreak = () => void run('skip', async () => { await study.skipBreak(); bump() })
   const handleNextFocus = () => void run('next', async () => { await study.startNextFocus(); bump() })
   const handleEndRound = () => void run('round', async () => { await study.endRound(); bump() })
 
-  const completeLinkedTask = () => void run('task-complete', async () => {
-    if (!taskDialog?.taskId) return
-    await setTaskCompleted(taskDialog.taskId, true)
-    setTaskDialog(null)
-  }, '任务已标记完成')
+  const saveSummary = (reflection: string, completeTask: boolean) => void run('summary', async () => {
+    if (!summary) return
+    if (reflection !== summary.session.reflection) await saveStudySessionReflection(summary.session.id, reflection)
+    if (completeTask && summary.session.taskId) await setTaskCompleted(summary.session.taskId, true)
+    setSummary(null)
+    bump()
+  }, completeTask ? '学习总结已保存，任务也完成啦' : '学习总结已保存')
+
+  const selectMode = (nextMode: StudyMode) => {
+    if (mode === nextMode) return
+    modeTouched.current = true
+    setMode(nextMode)
+    void persistPrefs({ defaultMode: nextMode }).catch(() => undefined)
+  }
 
   // 在场时长只在「无学习会话但有未签退记录」时需要本地秒针（会话激活时 study.nowMs 已在跳动）。
   const presenceTickMs = useNowTick(!study.session && Boolean(attendance.openRecord))
@@ -250,10 +274,10 @@ export function StudyPage() {
         )}
       <div className="surface rounded-2xl p-3">
         <div className="grid grid-cols-2 gap-2" role="group" aria-label="选择学习模式">
-          <button type="button" aria-pressed={mode === 'free'} className={modeButtonClass(mode === 'free')} onClick={() => { modeTouched.current = true; setMode('free') }}>
+          <button type="button" aria-pressed={mode === 'free'} className={modeButtonClass(mode === 'free')} onClick={() => selectMode('free')}>
             <Timer size={18} strokeWidth={1.9} aria-hidden="true" />自由计时
           </button>
-          <button type="button" aria-pressed={mode === 'pomodoro'} className={modeButtonClass(mode === 'pomodoro')} onClick={() => { modeTouched.current = true; setMode('pomodoro') }}>
+          <button type="button" aria-pressed={mode === 'pomodoro'} className={modeButtonClass(mode === 'pomodoro')} onClick={() => selectMode('pomodoro')}>
             <Hourglass size={18} strokeWidth={1.9} aria-hidden="true" />番茄专注
           </button>
         </div>
@@ -300,7 +324,7 @@ export function StudyPage() {
       <div className="mt-5 grid min-w-0 items-start gap-5 md:grid-cols-2">
         <div className="grid min-w-0 gap-5">
           {timerSlot}
-          <TaskPicker taskId={taskId} onTaskChange={setTaskId} sessions={todayData.sessions} segments={todayData.segments} nowMs={nowMs} />
+          <TaskPicker taskId={taskId} onTaskChange={setTaskId} refreshKey={recordsVersion} />
         </div>
         <div className="grid min-w-0 gap-5">
           <AttendanceCard
@@ -328,17 +352,13 @@ export function StudyPage() {
         </div>
       </div>
 
-      <ConfirmDialog
-        open={Boolean(taskDialog)}
-        title={taskDialog?.mode === 'pomodoro' ? `本次已完成 ${taskDialog?.pomodoroCompletedRounds ?? 0} 轮专注` : '本次学习已结束'}
-        description={taskDialog?.mode === 'pomodoro'
-          ? `是否同时完成「${taskDialog?.taskTitleSnapshot ?? ''}」？`
-          : `是否同时将「${taskDialog?.taskTitleSnapshot ?? ''}」标记为已完成？`}
-        confirmLabel="完成任务"
-        cancelLabel="暂不完成"
-        loading={busy === 'task-complete'}
-        onClose={() => setTaskDialog(null)}
-        onConfirm={completeLinkedTask}
+      <StudySummarySheet
+        session={summary?.session ?? null}
+        sessionSeconds={summary?.sessionSeconds ?? 0}
+        todaySeconds={summary?.todaySeconds ?? 0}
+        saving={busy === 'summary'}
+        onClose={() => setSummary(null)}
+        onSave={saveSummary}
       />
     </div>
   )

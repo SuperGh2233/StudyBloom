@@ -30,6 +30,7 @@ export const mapStudySession = (row: SessionRow): StudySession => ({
   phaseStartedAt: row.phase_started_at,
   phaseEndsAt: row.phase_ends_at,
   phaseRemainingSeconds: row.phase_remaining_seconds,
+  reflection: row.reflection,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 })
@@ -118,6 +119,17 @@ export const resumeStudySession = (sessionId: string) => rpcSession('resume_stud
 export const skipPomodoroBreak = (sessionId: string) => rpcSession('skip_pomodoro_break', sessionId, '跳过休息失败')
 export const endCurrentFocusRound = (sessionId: string) => rpcSession('end_current_focus_round', sessionId, '提前结束本轮失败')
 export const finishStudySession = (sessionId: string) => rpcSession('finish_study_session', sessionId, '结束学习失败')
+
+export async function saveStudySessionReflection(sessionId: string, reflection: string): Promise<StudySession> {
+  assertSessionId(sessionId)
+  if (reflection.trim().length > 500) throw new AppError('学习记录不能超过 500 个字符', 'VALIDATION')
+  await requireUser()
+  try {
+    const { data, error } = await getSupabase().rpc('save_study_session_reflection', { p_session_id: sessionId, p_reflection: reflection })
+    if (error) throw error
+    return mapStudySession(data)
+  } catch (error) { throw toAppError(error, '保存学习记录失败') }
+}
 
 /**
  * Idempotent catch-up: closes any phase whose planned end time passed while
@@ -224,6 +236,24 @@ export async function fetchStudyDataForRange(startDate: DateKey, endDate: DateKe
   const sessions = await listStudySessionsByDateRange(startDate, endDate)
   const segments = await listSegmentsForSessions(sessions.map((session) => session.id))
   return { sessions, segments }
+}
+
+/** All study history linked to the supplied tasks; shared by calendar progress and task details. */
+export async function fetchStudyDataForTasks(taskIds: string[]): Promise<{ sessions: StudySession[]; segments: StudySessionSegment[] }> {
+  const ids = [...new Set(taskIds.filter(Boolean))]
+  if (!ids.length) return { sessions: [], segments: [] }
+  const user = await requireUser()
+  try {
+    const { data, error } = await getSupabase()
+      .from('study_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .in('task_id', ids)
+      .order('started_at', { ascending: false })
+    if (error) throw error
+    const sessions = (data ?? []).map(mapStudySession)
+    return { sessions, segments: await listSegmentsForSessions(sessions.map((session) => session.id)) }
+  } catch (error) { throw toAppError(error, '读取任务学习记录失败') }
 }
 
 // ---------------------------------------------------------------------------

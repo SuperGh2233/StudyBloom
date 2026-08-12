@@ -48,6 +48,7 @@ export function StudyRecords({ sessions, segments, todayAttendance, recentRecord
                     {session.mode === 'pomodoro' && session.pomodoroCompletedRounds > 0 && <span>完成 {session.pomodoroCompletedRounds} 轮</span>}
                     {locationName && <span className="inline-flex items-center gap-1"><MapPin size={12} aria-hidden="true" />{locationName}</span>}
                   </div>
+                  {session.reflection && <p className="mt-2 rounded-lg bg-[var(--surface)] px-3 py-2 text-sm leading-6 text-[var(--muted)] [overflow-wrap:anywhere]">{session.reflection}</p>}
                 </li>
               )
             })}

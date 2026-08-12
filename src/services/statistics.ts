@@ -14,6 +14,7 @@ const mapTask = (row: TaskRow): Task => ({
   title: row.title,
   completed: row.completed,
   sortOrder: row.sort_order,
+  estimatedMinutes: row.estimated_minutes,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
@@ -131,4 +132,3 @@ export function getDateRangeStatistics(
 ) {
   return calculateStatistics(tasks, planDays, { startDate, endDate }, today);
 }
-

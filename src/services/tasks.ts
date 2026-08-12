@@ -5,7 +5,7 @@ import { assertDateKey, monthRange } from '../utils/date'
 import { AppError, toAppError } from '../utils/errorMessage'
 
 type TaskRow = Database['public']['Tables']['tasks']['Row']
-export const mapTask = (row: TaskRow): Task => ({ id: row.id, userId: row.user_id, planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order, createdAt: row.created_at, updatedAt: row.updated_at })
+export const mapTask = (row: TaskRow): Task => ({ id: row.id, userId: row.user_id, planDate: row.plan_date, title: row.title, completed: row.completed, sortOrder: row.sort_order, estimatedMinutes: row.estimated_minutes, createdAt: row.created_at, updatedAt: row.updated_at })
 
 const validateTitle = (title: string): string => {
   const value = title.trim()
@@ -17,6 +17,12 @@ const validateTitle = (title: string): string => {
 const validateSortOrder = (value: number | undefined): number | undefined => {
   if (value === undefined) return undefined
   if (!Number.isInteger(value) || value < 0) throw new AppError('任务排序必须是非负整数', 'VALIDATION')
+  return value
+}
+
+const validateEstimatedMinutes = (value: number | null | undefined): number | null | undefined => {
+  if (value === undefined || value === null) return value
+  if (!Number.isInteger(value) || value < 1 || value > 1440) throw new AppError('预计时长需要在 1–1440 分钟之间', 'VALIDATION')
   return value
 }
 
@@ -45,7 +51,7 @@ export async function createTask(input: TaskInput): Promise<Task> {
   const user = await requireUser()
   const sortOrder = validateSortOrder(input.sortOrder) ?? 0
   try {
-    const { data, error } = await getSupabase().from('tasks').insert({ user_id: user.id, plan_date: input.planDate, title: validateTitle(input.title), completed: input.completed ?? false, sort_order: sortOrder }).select('*').single()
+    const { data, error } = await getSupabase().from('tasks').insert({ user_id: user.id, plan_date: input.planDate, title: validateTitle(input.title), completed: input.completed ?? false, sort_order: sortOrder, estimated_minutes: validateEstimatedMinutes(input.estimatedMinutes) ?? null }).select('*').single()
     if (error) throw error
     return mapTask(data)
   } catch (error) { throw toAppError(error, '创建任务失败') }
@@ -60,6 +66,7 @@ export async function updateTask(id: string, input: TaskUpdate): Promise<Task> {
   if (input.title !== undefined) update.title = validateTitle(input.title)
   if (input.completed !== undefined) update.completed = Boolean(input.completed)
   if (input.sortOrder !== undefined) update.sort_order = validateSortOrder(input.sortOrder)
+  if (input.estimatedMinutes !== undefined) update.estimated_minutes = validateEstimatedMinutes(input.estimatedMinutes)
   if (!Object.keys(update).length) throw new AppError('没有需要更新的任务字段', 'VALIDATION')
   try {
     const { data, error } = await getSupabase().from('tasks').update(update).eq('id', id).eq('user_id', user.id).select('*').single()

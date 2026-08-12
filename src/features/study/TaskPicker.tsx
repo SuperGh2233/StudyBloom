@@ -1,24 +1,25 @@
 import { ListChecks, RefreshCw } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/Button'
+import { useTaskStudySummaries } from '../../hooks/useTaskStudySummaries'
 import { listTasksByDate } from '../../services/tasks'
-import type { StudySession, StudySessionSegment, Task } from '../../types'
+import type { Task, TaskStudySummary } from '../../types'
 import { todayDateKey } from '../../utils/date'
 import { getErrorMessage } from '../../utils/errorMessage'
-import { formatDurationHuman, sessionElapsedSeconds } from '../../utils/studyDuration'
+import { TaskStudyProgress } from '../tasks/TaskStudyProgress'
 
 interface TaskPickerProps {
   taskId: string | null
   onTaskChange: (taskId: string | null) => void
-  sessions: StudySession[]
-  segments: StudySessionSegment[]
-  nowMs: number
+  refreshKey?: unknown
 }
 
-export function TaskPicker({ taskId, onTaskChange, sessions, segments, nowMs }: TaskPickerProps) {
+export function TaskPicker({ taskId, onTaskChange, refreshKey }: TaskPickerProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const defaultApplied = useRef(false)
+  const summaries = useTaskStudySummaries(tasks.map((task) => task.id), refreshKey)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -38,14 +39,12 @@ export function TaskPicker({ taskId, onTaskChange, sessions, segments, nowMs }: 
     if (!loading && taskId && !tasks.some((task) => task.id === taskId)) onTaskChange(null)
   }, [loading, tasks, taskId, onTaskChange])
 
-  const secondsByTask = useMemo(() => {
-    const map = new Map<string, number>()
-    for (const session of sessions) {
-      if (!session.taskId) continue
-      map.set(session.taskId, (map.get(session.taskId) ?? 0) + sessionElapsedSeconds(session, segments, nowMs))
-    }
-    return map
-  }, [sessions, segments, nowMs])
+  useEffect(() => {
+    if (loading || defaultApplied.current || taskId) return
+    defaultApplied.current = true
+    const firstUnfinished = tasks.find((task) => !task.completed)
+    if (firstUnfinished) onTaskChange(firstUnfinished.id)
+  }, [loading, tasks, taskId, onTaskChange])
 
   return (
     <section className="surface rounded-2xl p-5" aria-label="今日任务选择">
@@ -71,25 +70,22 @@ export function TaskPicker({ taskId, onTaskChange, sessions, segments, nowMs }: 
           title="自由学习（不关联任务）"
           onClick={() => onTaskChange(null)}
         />
-        {tasks.map((task) => {
-          const seconds = secondsByTask.get(task.id) ?? 0
-          return (
+        {tasks.map((task) => (
             <OptionButton
               key={task.id}
               selected={taskId === task.id}
-              title={task.title}
-              detail={seconds > 0 ? `今日已学习 ${formatDurationHuman(seconds)}` : undefined}
-              completed={task.completed}
+              task={task}
+              summary={summaries.get(task.id)}
               onClick={() => onTaskChange(task.id)}
             />
-          )
-        })}
+        ))}
       </div>
     </section>
   )
 }
 
-function OptionButton({ selected, title, detail, completed, onClick }: { selected: boolean; title: string; detail?: string; completed?: boolean; onClick: () => void }) {
+function OptionButton({ selected, title, task, summary, onClick }: { selected: boolean; title?: string; task?: Task; summary?: TaskStudySummary; onClick: () => void }) {
+  const label = task?.title ?? title ?? ''
   return (
     <button
       type="button"
@@ -97,8 +93,8 @@ function OptionButton({ selected, title, detail, completed, onClick }: { selecte
       onClick={onClick}
       className={`focus-ring grid min-h-11 w-full gap-0.5 rounded-xl border px-3.5 py-2.5 text-left transition ${selected ? 'border-[var(--accent-strong)] bg-[var(--accent-soft)]' : 'border-[var(--line)] bg-[var(--surface)] hover:bg-[var(--surface-soft)]'}`}
     >
-      <span className={`min-w-0 truncate text-sm font-semibold ${completed ? 'text-[var(--muted)] line-through decoration-[var(--line-strong)]' : ''}`}>{title}</span>
-      {detail && <span className="text-xs text-[var(--muted)]">{detail}</span>}
+      <span className={`min-w-0 truncate text-sm font-semibold ${task?.completed ? 'text-[var(--muted)] line-through decoration-[var(--line-strong)]' : ''}`}>{label}</span>
+      {task && <TaskStudyProgress task={task} summary={summary} />}
     </button>
   )
 }

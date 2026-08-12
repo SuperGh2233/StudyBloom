@@ -161,6 +161,21 @@ order by table_name, privilege_type;
 
 三张表对 `authenticated` 应只剩 `SELECT`，状态写入由 RPC 的函数所有者完成。
 
+### V0.5.0 任务学习目标迁移
+
+已有线上项目继续执行 `migrations/20260813000000_add_task_study_goals_and_reflections.sql`。该迁移为任务增加可选的预计学习分钟，为已结束学习会话增加最多 500 字的学习感受，并提供仅限记录所有者调用的保存与备份恢复 RPC。执行后无需迁移已有数据，旧任务默认不设置预计时长，旧学习记录的感受默认为空。
+
+可在 SQL Editor 验证：
+
+```sql
+select column_name from information_schema.columns
+where table_schema = 'public'
+  and ((table_name = 'tasks' and column_name = 'estimated_minutes')
+    or (table_name = 'study_sessions' and column_name = 'reflection'));
+```
+
+应返回两行。浏览器仍不能直接更新 `study_sessions.reflection`，页面通过 `save_study_session_reflection` 安全保存。
+
 ### 权限与验证模型
 
 - 五张新表全部为「仅本人」策略：`auth.uid() = user_id`。V0.4.1 后三张核心记录表额外撤销浏览器直接写权限。**好友（calendar_shares）不获得任何新表的读取权限**——精确经纬度、签到记录、学习时长明细永不对好友开放。

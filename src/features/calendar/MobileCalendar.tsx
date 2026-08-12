@@ -2,8 +2,9 @@ import { eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday,
 import { zhCN } from 'date-fns/locale'
 import { Check, Moon, Plus, Square, SquareCheck, Timer } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import type { PlanDay, Task } from '../../types'
+import type { PlanDay, Task, TaskStudySummary } from '../../types'
 import { dateKeyFromParts, todayDateKey } from '../../utils/date'
+import { TaskStudyProgress } from '../tasks/TaskStudyProgress'
 
 const weekDays = ['一', '二', '三', '四', '五', '六', '日']
 
@@ -13,6 +14,7 @@ interface MobileCalendarProps {
   month: Date
   tasksByDate: Map<string, Task[]>
   planDaysByDate: Map<string, PlanDay>
+  studySummaries: Map<string, TaskStudySummary>
   selectedDate: string
   onSelect: (date: string) => void
   onToggle: (id: string, completed: boolean) => Promise<void>
@@ -20,7 +22,7 @@ interface MobileCalendarProps {
 }
 
 /** Phone layout: compact date-only month grid for picking a day, full task list below it. */
-export function MobileCalendarView({ month, tasksByDate, planDaysByDate, selectedDate, onSelect, onToggle, onOpenEditor }: MobileCalendarProps) {
+export function MobileCalendarView({ month, tasksByDate, planDaysByDate, studySummaries, selectedDate, onSelect, onToggle, onOpenEditor }: MobileCalendarProps) {
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(month), { weekStartsOn: 1 }),
     end: endOfWeek(endOfMonth(month), { weekStartsOn: 1 }),
@@ -48,7 +50,7 @@ export function MobileCalendarView({ month, tasksByDate, planDaysByDate, selecte
           ))}
         </div>
       </div>
-      <MobileDayTaskList date={selectedDate} tasks={tasks} planDay={planDay} onToggle={onToggle} onOpenEditor={onOpenEditor} />
+      <MobileDayTaskList date={selectedDate} tasks={tasks} planDay={planDay} studySummaries={studySummaries} onToggle={onToggle} onOpenEditor={onOpenEditor} />
     </div>
   )
 }
@@ -86,7 +88,7 @@ export function DateCell({ date, month, tasks, rest, selected, onSelect }: { dat
   )
 }
 
-function MobileDayTaskList({ date, tasks, planDay, onToggle, onOpenEditor }: { date: string; tasks: Task[]; planDay?: PlanDay; onToggle: (id: string, completed: boolean) => Promise<void>; onOpenEditor: (date: string) => void }) {
+function MobileDayTaskList({ date, tasks, planDay, studySummaries, onToggle, onOpenEditor }: { date: string; tasks: Task[]; planDay?: PlanDay; studySummaries: Map<string, TaskStudySummary>; onToggle: (id: string, completed: boolean) => Promise<void>; onOpenEditor: (date: string) => void }) {
   const navigate = useNavigate()
   const isToday = date === todayDateKey()
   const completed = tasks.filter((task) => task.completed).length
@@ -116,9 +118,10 @@ function MobileDayTaskList({ date, tasks, planDay, onToggle, onOpenEditor }: { d
                 type="button"
                 onClick={openEditor}
                 aria-label={`编辑 ${task.title}`}
-                className={`focus-ring min-w-0 flex-1 px-1 py-2.5 text-left text-[15px] font-medium leading-[22px] ${task.completed ? 'text-[var(--muted)] opacity-70 line-through decoration-[var(--line)] decoration-1' : 'text-[var(--ink)]'}`}
+                className="focus-ring min-w-0 flex-1 px-1 py-2.5 text-left text-[15px] font-medium leading-[22px]"
               >
-                <span className="line-clamp-2 min-w-0 break-words">{task.title}</span>
+                <span className={`line-clamp-2 min-w-0 break-words ${task.completed ? 'text-[var(--muted)] opacity-70 line-through decoration-[var(--line)] decoration-1' : 'text-[var(--ink)]'}`}>{task.title}</span>
+                <TaskStudyProgress task={task} summary={studySummaries.get(task.id)} className="mt-1" />
               </button>
               {isToday && (
                 <button

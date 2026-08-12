@@ -36,7 +36,8 @@ const sessionDefaults: StudySession = {
   currentRound: 0,
   phaseStartedAt: null,
   phaseEndsAt: null,
-  phaseRemainingSeconds: null,
+      phaseRemainingSeconds: null,
+      reflection: '',
   createdAt: '2026-08-10T09:00:00+08:00',
   updatedAt: '2026-08-10T10:00:00+08:00',
 }

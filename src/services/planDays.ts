@@ -162,6 +162,7 @@ export async function copyPlanDay(sourceDate: DateKey, targetDate: DateKey, mode
           title: task.title,
           completed: task.completed,
           sort_order: offset + (mode === 'append' ? index : task.sortOrder),
+          estimated_minutes: task.estimatedMinutes,
         })),
       );
       if (error) throw error;
@@ -187,4 +188,3 @@ export async function copyPlanMonth(sourceMonth: string, targetMonth: string, mo
 }
 
 export const copyPlan = copyPlanDay;
-

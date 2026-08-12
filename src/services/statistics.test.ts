@@ -9,6 +9,7 @@ const task = (id: string, planDate: string, completed = true): Task => ({
   title: `任务 ${id}`,
   completed,
   sortOrder: 0,
+  estimatedMinutes: null,
   createdAt: '2026-08-01T00:00:00Z',
   updatedAt: '2026-08-01T00:00:00Z',
 })
