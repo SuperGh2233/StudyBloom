@@ -139,6 +139,22 @@ export interface CompanionWeeklySummary {
   summary: string;
 }
 
+export interface CompanionHomeState {
+  hasFriends: boolean;
+  primaryCompanionId: string | null;
+  primaryCompanionName: string;
+  experienceMode: CompanionExperienceMode;
+  ownShareLevel: CompanionShareLevel;
+  companionShareLevel: CompanionShareLevel;
+  todayDate: DateKey;
+  companionToday: CompanionDaySummary | null;
+  sharedBloomDates: DateKey[];
+  weekBloomDays: number;
+  sentToday: boolean;
+  receivedToday: boolean;
+  generatedAt: string;
+}
+
 export interface FriendNote {
   ownerId: string;
   friendId: string;
@@ -1108,6 +1124,27 @@ export interface Database {
           studied_minutes: number | null;
           completed_tasks: number | null;
           total_tasks: number | null;
+        }[];
+      };
+      get_companion_home_state: {
+        Args: Record<string, never>;
+        Returns: {
+          has_friends: boolean;
+          primary_companion_id: string | null;
+          primary_companion_name: string | null;
+          experience_mode: 'study_together' | 'supporter';
+          own_share_level: 'none' | 'bloom_only' | 'summary';
+          companion_share_level: 'none' | 'bloom_only' | 'summary';
+          today_date: string;
+          companion_effective_today: boolean | null;
+          companion_studied_minutes: number | null;
+          companion_completed_tasks: number | null;
+          companion_total_tasks: number | null;
+          shared_bloom_dates: string[];
+          week_bloom_days: number;
+          sent_today: boolean;
+          received_today: boolean;
+          generated_at: string;
         }[];
       };
       get_companion_weekly_summary: {

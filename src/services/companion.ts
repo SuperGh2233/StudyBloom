@@ -3,6 +3,7 @@ import type {
   CompanionDaySummary,
   CompanionEncouragement,
   CompanionExperienceMode,
+  CompanionHomeState,
   CompanionPreferences,
   CompanionSetting,
   CompanionShareLevel,
@@ -43,6 +44,37 @@ const mapEncouragement = (row: EncouragementRow): CompanionEncouragement => ({
   kind: row.kind,
   createdAt: row.created_at,
 })
+
+export async function getCompanionHomeState(): Promise<CompanionHomeState> {
+  await requireUser()
+  try {
+    const { data, error } = await getSupabase().rpc('get_companion_home_state')
+    if (error) throw error
+    const row = data?.[0]
+    if (!row) throw new AppError('首页搭子数据为空', 'UNKNOWN')
+    return {
+      hasFriends: row.has_friends,
+      primaryCompanionId: row.primary_companion_id,
+      primaryCompanionName: row.primary_companion_name ?? '学习搭子',
+      experienceMode: row.experience_mode,
+      ownShareLevel: row.own_share_level,
+      companionShareLevel: row.companion_share_level,
+      todayDate: row.today_date,
+      companionToday: row.companion_effective_today === null ? null : {
+        date: row.today_date,
+        effectiveStudy: row.companion_effective_today,
+        studiedMinutes: row.companion_studied_minutes,
+        completedTasks: row.companion_completed_tasks,
+        totalTasks: row.companion_total_tasks,
+      },
+      sharedBloomDates: row.shared_bloom_dates ?? [],
+      weekBloomDays: row.week_bloom_days,
+      sentToday: row.sent_today,
+      receivedToday: row.received_today,
+      generatedAt: row.generated_at,
+    }
+  } catch (error) { throw toAppError(error, '读取首页搭子状态失败') }
+}
 
 export async function getCompanionPreferences(): Promise<CompanionPreferences> {
   const user = await requireUser()
@@ -139,4 +171,3 @@ export async function sendCompanionFlower(recipientId: string): Promise<Companio
     return mapEncouragement(data)
   } catch (error) { throw toAppError(error, '送出小花失败') }
 }
-

@@ -15,9 +15,8 @@ import { FirstRunSheet } from '../features/study/FirstRunSheet'
 import { ProgressivePrompt } from '../features/study/ProgressivePrompt'
 import { TodayStudyCard } from '../features/study/TodayStudyCard'
 import { useDailyStudyGoal } from '../hooks/useDailyStudyGoal'
-import { useCompanionship } from '../hooks/useCompanionship'
+import { useCompanionHome } from '../hooks/useCompanionHome'
 import { useFirstRunOnboarding } from '../hooks/useFirstRunOnboarding'
-import { useFriendships } from '../hooks/useFriendships'
 import { useMonthPlans } from '../hooks/useMonthPlans'
 import { useQuickStartStudy } from '../hooks/useQuickStartStudy'
 import { useStudyMode } from '../hooks/useStudyMode'
@@ -35,8 +34,7 @@ export function CalendarPage() {
   const today = useTodayTasks(todayRefreshKey)
   const studySummaries = useTaskStudySummaries(data.tasks.map((task) => task.id))
   const dailyGoal = useDailyStudyGoal()
-  const friendships = useFriendships()
-  const companionship = useCompanionship(friendships)
+  const companionship = useCompanionHome()
   const study = useStudyMode()
   const quickStart = useQuickStartStudy()
   const firstRun = useFirstRunOnboarding()
@@ -58,7 +56,7 @@ export function CalendarPage() {
 
   return (
     <div className="gentle-enter min-w-0">
-      {companionship.preferences?.experienceMode === 'supporter' && <CompanionCard data={companionship} friends={friendships} />}
+      {companionship.data?.experienceMode === 'supporter' && <CompanionCard data={companionship} />}
       <div className={`grid min-w-0 gap-3 ${!dailyGoal.loading && dailyGoal.countdownEnabled && dailyGoal.countdownDate ? 'lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]' : ''}`}>
         <TodayStudyCard
           tasks={today.tasks}
@@ -74,7 +72,7 @@ export function CalendarPage() {
         {!dailyGoal.loading && dailyGoal.countdownEnabled && dailyGoal.countdownDate && <ExamCountdownCard title={dailyGoal.countdownTitle} targetDate={dailyGoal.countdownDate} />}
       </div>
 
-      {companionship.preferences?.experienceMode !== 'supporter' && <CompanionCard data={companionship} friends={friendships} />}
+      {companionship.data?.experienceMode !== 'supporter' && <CompanionCard data={companionship} />}
 
       <ProgressivePrompt hidden={firstRun.open || firstRun.loading} studiedSeconds={dailyGoal.studiedSeconds} dailyGoalEnabled={dailyGoal.enabled} activeStudyDays={dailyGoal.activeStudyDays} allTodayTasksCompleted={allTodayTasksCompleted} />
 

@@ -14,8 +14,8 @@ import { formatDurationHuman } from '../utils/studyDuration'
 import { todayDateKey } from '../utils/date'
 import { DailyGoalCard } from '../features/study/DailyGoalCard'
 import { CompanionWeeklyCard } from '../features/companionship/CompanionWeeklyCard'
-import { useCompanionship } from '../hooks/useCompanionship'
-import { useFriendships } from '../hooks/useFriendships'
+import { useCompanionHome } from '../hooks/useCompanionHome'
+import { useCompanionWeekly } from '../hooks/useCompanionWeekly'
 
 const RANGE_OPTIONS: { kind: StudyRangeKind; label: string }[] = [
   { kind: 'today', label: '今天' },
@@ -24,8 +24,8 @@ const RANGE_OPTIONS: { kind: StudyRangeKind; label: string }[] = [
 ]
 
 export function StatisticsPage() {
-  const friendships = useFriendships()
-  const companionship = useCompanionship(friendships)
+  const companionHome = useCompanionHome()
+  const companionWeekly = useCompanionWeekly(companionHome.data?.primaryCompanionId ?? null)
   const [stats, setStats] = useState<MonthlyStatistics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -176,7 +176,7 @@ export function StatisticsPage() {
         </section>
       )}
 
-      <CompanionWeeklyCard data={companionship} />
+      <CompanionWeeklyCard data={companionWeekly} />
 
       {error && <div className="mt-5 mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--rose-soft)] p-4 text-sm text-[var(--rose)]"><span>{error}</span><Button variant="secondary" icon={<RefreshCw size={16} />} onClick={load}>重试</Button></div>}
 

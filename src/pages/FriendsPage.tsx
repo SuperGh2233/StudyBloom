@@ -7,7 +7,7 @@ import { Input } from '../components/FormField'
 import { LoadingState } from '../components/LoadingState'
 import { useToast } from '../components/ToastProvider'
 import { useFriendships } from '../hooks/useFriendships'
-import { useCompanionship } from '../hooks/useCompanionship'
+import { useCompanionSettings } from '../hooks/useCompanionSettings'
 import { findProfileByFriendCode } from '../services/profiles'
 import type { Friendship, Profile } from '../types'
 import { getErrorMessage } from '../utils/errorMessage'
@@ -15,7 +15,7 @@ import { buildFriendInviteUrl, clearPendingInvite, isFriendCode, normalizeFriend
 
 export function FriendsPage() {
   const data = useFriendships()
-  const companionship = useCompanionship(data)
+  const companionship = useCompanionSettings(data.me)
   const { showToast } = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const [busy, setBusy] = useState('')
@@ -190,8 +190,8 @@ export function FriendsPage() {
           <h2 className="flex items-center gap-2 font-bold"><Flower2 size={18} className="text-[var(--accent-strong)]" />和 {onlyFriendName} 开启一起绽放</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">先选择你的使用方式。此操作不会自动共享学习数据。</p>
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <Button variant="secondary" className="min-h-14 px-2 text-xs sm:text-sm" onClick={() => run('setup-study', async () => { await companionship.setPrimary(onlyFriendId); await companionship.setMode('study_together') }, '首页搭子已设置')}>我也要一起学习</Button>
-            <Button variant="secondary" className="min-h-14 px-2 text-xs sm:text-sm" onClick={() => run('setup-support', async () => { await companionship.setPrimary(onlyFriendId); await companionship.setMode('supporter') }, '首页搭子已设置')}>我主要来陪伴 TA</Button>
+            <Button variant="secondary" className="min-h-14 px-2 text-xs sm:text-sm" onClick={() => run('setup-study', () => companionship.setup(onlyFriendId, 'study_together'), '首页搭子已设置')}>我也要一起学习</Button>
+            <Button variant="secondary" className="min-h-14 px-2 text-xs sm:text-sm" onClick={() => run('setup-support', () => companionship.setup(onlyFriendId, 'supporter'), '首页搭子已设置')}>我主要来陪伴 TA</Button>
           </div>
         </section>
       )}

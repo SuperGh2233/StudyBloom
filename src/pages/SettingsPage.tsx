@@ -8,10 +8,9 @@ import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../features/auth/AuthContext'
 import { StudyLocationSettings } from '../features/study/StudyLocationSettings'
 import { useFriendships } from '../hooks/useFriendships'
-import { useCompanionship } from '../hooks/useCompanionship'
+import { useCompanionSettings } from '../hooks/useCompanionSettings'
 import { importPlan } from '../services/importExport'
 import { exportAllDataJson, validateImportData } from '../services/backup'
-import { getMyProfile, updateMyProfile } from '../services/profiles'
 import { getStudyPreferences, saveStudyPreferences } from '../services/studySessions'
 import { exportAttendanceCsv, exportDailyStudyCsv, exportStudySessionsCsv } from '../services/csvExport'
 import type { CompanionShareLevel, CopyMode, Friendship, Profile, StudyBloomExport } from '../types'
@@ -24,7 +23,7 @@ export function SettingsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const friends = useFriendships()
-  const companionship = useCompanionship(friends)
+  const companionship = useCompanionSettings(friends.me)
   const fileInput = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<StudyBloomExport | null>(null)
   const [pendingMode, setPendingMode] = useState<CopyMode | null>(null)
@@ -39,12 +38,10 @@ export function SettingsPage() {
   const [countdownDate, setCountdownDate] = useState('')
 
   useEffect(() => {
-    let active = true
-    getMyProfile()
-      .then((profile) => { if (active && profile) { setMyProfile(profile); setDisplayName(profile.displayName) } })
-      .catch(() => { /* profile missing until the migration runs; section shows a hint */ })
-    return () => { active = false }
-  }, [])
+    if (!friends.myProfile) return
+    setMyProfile(friends.myProfile)
+    setDisplayName(friends.myProfile.displayName)
+  }, [friends.myProfile])
 
   useEffect(() => {
     if (!location.hash) return
@@ -132,13 +129,13 @@ export function SettingsPage() {
 
   const saveDisplayName = (event: FormEvent) => {
     event.preventDefault()
-    runPrivacy('display-name', async () => { setMyProfile(await updateMyProfile({ displayName })) }, '昵称已保存')
+    runPrivacy('display-name', async () => { setMyProfile(await friends.updateProfile({ displayName })) }, '昵称已保存')
   }
 
   const toggleRequests = () => {
     if (!myProfile) return
     const next = !myProfile.allowRequests
-    runPrivacy('allow-requests', async () => { setMyProfile(await updateMyProfile({ allowRequests: next })) }, next ? '已开启接收好友申请' : '已停止接收好友申请')
+    runPrivacy('allow-requests', async () => { setMyProfile(await friends.updateProfile({ allowRequests: next })) }, next ? '已开启接收好友申请' : '已停止接收好友申请')
   }
 
   const saveGoal = (event: FormEvent) => {

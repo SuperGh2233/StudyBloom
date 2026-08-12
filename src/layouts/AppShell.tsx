@@ -5,6 +5,8 @@ import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../features/auth/AuthContext'
 import { ActiveStudyBar } from '../features/study/ActiveStudyBar'
 import { StudySessionProvider } from '../hooks/useStudyMode'
+import { CompanionDataProvider } from '../features/companionship/CompanionDataContext'
+import { FriendshipsProvider } from '../features/friends/FriendshipsContext'
 
 const items = [
   { to: '/calendar', label: '日历', icon: CalendarDays },
@@ -31,6 +33,8 @@ export function AppShell() {
   return (
     <div className="app-background min-h-[100dvh]">
       <StudySessionProvider>
+        <CompanionDataProvider>
+        <FriendshipsProvider>
         <header className="pwa-safe-top sticky top-0 z-30 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--page)_90%,transparent)] backdrop-blur-xl">
           <div className="pwa-safe-inline mx-auto flex h-16 max-w-7xl min-w-0 items-center justify-between gap-2">
             <NavLink to="/calendar" className="focus-ring flex min-w-0 items-center gap-2 rounded-xl" aria-label="StudyBloom 日历首页">
@@ -55,6 +59,8 @@ export function AppShell() {
           {items.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => `focus-ring grid min-h-14 min-w-0 justify-items-center gap-1 rounded-xl py-1 text-xs font-semibold ${isActive ? 'text-[var(--accent-strong)]' : 'text-[var(--muted)]'}`}><Icon size={21} strokeWidth={1.8} /><span className="max-w-full min-w-0 truncate">{label}</span></NavLink>)}
         </nav>
         <InstallPWA />
+        </FriendshipsProvider>
+        </CompanionDataProvider>
       </StudySessionProvider>
     </div>
   )

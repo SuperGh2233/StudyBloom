@@ -1,9 +1,9 @@
 import { Flower2 } from 'lucide-react'
-import type { useCompanionship } from '../../hooks/useCompanionship'
+import type { useCompanionWeekly } from '../../hooks/useCompanionWeekly'
 
-export function CompanionWeeklyCard({ data }: { data: ReturnType<typeof useCompanionship> }) {
-  if (data.loading || !data.primaryId || !data.weekly) return null
-  const { weekly } = data
+export function CompanionWeeklyCard({ data }: { data: ReturnType<typeof useCompanionWeekly> }) {
+  if (data.loading || !data.summary) return null
+  const weekly = data.summary
   return (
     <section className="surface mt-5 rounded-2xl p-5 sm:p-6" aria-labelledby="companion-weekly-title">
       <h2 id="companion-weekly-title" className="flex items-center gap-2 font-bold"><Flower2 size={19} className="text-[var(--accent-strong)]" />你们的本周记录</h2>
@@ -21,4 +21,3 @@ export function CompanionWeeklyCard({ data }: { data: ReturnType<typeof useCompa
 function Metric({ label, value, className = '' }: { label: string; value: string; className?: string }) {
   return <div className={`rounded-xl bg-[var(--surface-soft)] p-3 ${className}`}><p className="text-xs text-[var(--muted)]">{label}</p><p className="mt-1 text-lg font-bold">{value}</p></div>
 }
-

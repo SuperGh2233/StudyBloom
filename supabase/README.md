@@ -239,6 +239,25 @@ where routine_schema = 'public'
 
 三张表应全部启用 RLS，三个函数均应存在。真实权限验证需使用至少三个账号：已接受好友、非好友和被拉黑账号，完整清单见根目录 `TESTING.md`。
 
+### V0.9.1 首页搭子加载优化
+
+已有项目继续执行 `migrations/20260817000000_optimize_companion_home.sql`。该迁移新增 `get_companion_home_state()`，在一次受保护的请求中返回首页搭子卡需要的最小聚合字段。
+
+- 只接受当前用户已经通过的首页搭子，关系失效时按未设置处理。
+- `none` 不返回对方学习状态；`bloom_only` 只返回有效学习布尔值；`summary` 才返回整数分钟和任务完成数量。
+- 最多计算最近七个中国自然日，不返回原始会话、片段、任务名称、备注、定位或精确时间。
+- 函数固定 `search_path`，匿名角色无执行权限。
+
+执行后可验证：
+
+```sql
+select routine_name from information_schema.routines
+where routine_schema = 'public'
+  and routine_name = 'get_companion_home_state';
+```
+
+应返回一行。前端部署前必须先执行该迁移，否则首页搭子卡会提示加载失败。
+
 ### 权限与验证模型
 
 - 五张新表全部为「仅本人」策略：`auth.uid() = user_id`。V0.4.1 后三张核心记录表额外撤销浏览器直接写权限。**好友（calendar_shares）不获得任何新表的读取权限**——精确经纬度、签到记录、学习时长明细永不对好友开放。
