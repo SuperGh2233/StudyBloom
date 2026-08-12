@@ -21,9 +21,11 @@ export function useDailyStudyGoal(refreshKey: unknown = 0) {
     let active = true
     const today = todayDateKey()
     const monthStart = `${today.slice(0, 8)}01`
-    Promise.all([getStudyPreferences(), fetchStudyDataForRange(monthStart, today)])
-      .then(([preferences, data]) => {
+    Promise.allSettled([getStudyPreferences(), fetchStudyDataForRange(monthStart, today)])
+      .then(([preferencesResult, dataResult]) => {
         if (!active) return
+        const preferences = preferencesResult.status === 'fulfilled' ? preferencesResult.value : null
+        const data = dataResult.status === 'fulfilled' ? dataResult.value : { sessions: [], segments: [] }
         const todayStats = calculateStudyStatistics(data.sessions, data.segments, { startDate: today, endDate: today })
         const monthStats = calculateStudyStatistics(data.sessions, data.segments, { startDate: monthStart, endDate: today })
         setState({
@@ -37,7 +39,6 @@ export function useDailyStudyGoal(refreshKey: unknown = 0) {
           countdownDate: preferences?.countdownDate ?? null,
         })
       })
-      .catch(() => { if (active) setState((current) => ({ ...current, loading: false })) })
     return () => { active = false }
   }, [refreshKey])
   return state
