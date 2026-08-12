@@ -161,7 +161,7 @@ order by table_name, privilege_type;
 
 三张表对 `authenticated` 应只剩 `SELECT`，状态写入由 RPC 的函数所有者完成。
 
-### V0.5.0 任务学习目标迁移
+### V0.5.1 任务学习目标迁移
 
 已有线上项目继续执行 `migrations/20260813000000_add_task_study_goals_and_reflections.sql`。该迁移为任务增加可选的预计学习分钟，为已结束学习会话增加最多 500 字的学习感受，并提供仅限记录所有者调用的保存与备份恢复 RPC。执行后无需迁移已有数据，旧任务默认不设置预计时长，旧学习记录的感受默认为空。
 

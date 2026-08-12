@@ -19,7 +19,7 @@ describe('V0.4.1 学习数据迁移契约', () => {
   })
 })
 
-describe('V0.5.0 任务学习目标迁移契约', () => {
+describe('V0.5.1 任务学习目标迁移契约', () => {
   it('新增预计时长、学习感受和受控保存函数', () => {
     expect(v050Migration).toContain('add column if not exists estimated_minutes integer')
     expect(v050Migration).toContain("add column if not exists reflection text not null default ''")

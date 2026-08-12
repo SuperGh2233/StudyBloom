@@ -304,7 +304,7 @@ export interface ExportTask {
   title: string;
   completed: boolean;
   sortOrder: number;
-  /** Optional for compatibility with backups created before V0.5.0. */
+  /** Optional for compatibility with backups created before V0.5.1. */
   estimatedMinutes?: number | null;
 }
 
@@ -360,7 +360,7 @@ export interface ExportStudySession {
   phaseStartedAt: string | null;
   phaseEndsAt: string | null;
   phaseRemainingSeconds: number | null;
-  /** Optional for compatibility with backups created before V0.5.0. */
+  /** Optional for compatibility with backups created before V0.5.1. */
   reflection?: string;
 }
 

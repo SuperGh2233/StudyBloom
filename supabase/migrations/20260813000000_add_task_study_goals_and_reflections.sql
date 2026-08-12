@@ -1,4 +1,4 @@
--- StudyBloom V0.5.0: task study goals, end-of-session reflections and
+-- StudyBloom V0.5.1: task study goals, end-of-session reflections and
 -- task-linked study history. Additive and compatible with existing rows.
 
 alter table public.tasks

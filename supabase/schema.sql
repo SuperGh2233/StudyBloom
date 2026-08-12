@@ -1602,7 +1602,7 @@ grant select on table
   public.study_session_segments
 to authenticated;
 
--- V0.5.0: optional task duration goals and end-of-session reflections.
+-- V0.5.1: optional task duration goals and end-of-session reflections.
 alter table public.tasks
   add column if not exists estimated_minutes integer;
 
