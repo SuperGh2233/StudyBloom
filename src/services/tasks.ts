@@ -36,6 +36,15 @@ export async function listTasksByDate(planDate: DateKey): Promise<Task[]> {
   } catch (error) { throw toAppError(error, '读取任务失败') }
 }
 
+export async function hasAnyTask(): Promise<boolean> {
+  const user = await requireUser()
+  try {
+    const { data, error } = await getSupabase().from('tasks').select('id').eq('user_id', user.id).limit(1)
+    if (error) throw error
+    return Boolean(data?.length)
+  } catch (error) { throw toAppError(error, '读取任务状态失败') }
+}
+
 export async function listTasksByMonth(month: string): Promise<Task[]> {
   const range = monthRange(month)
   const user = await requireUser()

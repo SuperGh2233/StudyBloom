@@ -189,6 +189,9 @@ async function restoreStudyRecords(client: SupabaseClient<Database>, userId: str
       vibration_enabled: study.preferences.vibrationEnabled,
       daily_goal_enabled: study.preferences.dailyGoalEnabled ?? true,
       daily_goal_minutes: study.preferences.dailyGoalMinutes ?? 120,
+      countdown_enabled: study.preferences.countdownEnabled ?? false,
+      countdown_title: study.preferences.countdownTitle ?? '考研初试',
+      countdown_date: study.preferences.countdownDate ?? null,
     }, { onConflict: 'user_id' })
     if (error) throw error
   }

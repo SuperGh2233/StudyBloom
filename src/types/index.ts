@@ -89,6 +89,14 @@ export interface CalendarShare {
   updatedAt: string;
 }
 
+export interface FriendNote {
+  ownerId: string;
+  friendId: string;
+  remark: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CopyPlanOptions {
   sourceDate: DateKey;
   targetDate: DateKey;
@@ -238,6 +246,9 @@ export interface StudyPreferences {
   vibrationEnabled: boolean;
   dailyGoalEnabled: boolean;
   dailyGoalMinutes: number;
+  countdownEnabled: boolean;
+  countdownTitle: string;
+  countdownDate: DateKey | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -252,6 +263,9 @@ export interface StudyPreferencesUpdate {
   vibrationEnabled?: boolean;
   dailyGoalEnabled?: boolean;
   dailyGoalMinutes?: number;
+  countdownEnabled?: boolean;
+  countdownTitle?: string;
+  countdownDate?: DateKey | null;
 }
 
 export interface GeoPoint {
@@ -410,6 +424,12 @@ export interface ExportStudyPreferences {
   dailyGoalEnabled?: boolean;
   /** Optional for compatibility with backups created before V0.6.0. */
   dailyGoalMinutes?: number;
+  /** Optional for compatibility with backups created before V0.7.0. */
+  countdownEnabled?: boolean;
+  /** Optional for compatibility with backups created before V0.7.0. */
+  countdownTitle?: string;
+  /** Optional for compatibility with backups created before V0.7.0. */
+  countdownDate?: DateKey | null;
 }
 
 export interface StudyBloomExportV1 {
@@ -596,6 +616,30 @@ export interface Database {
           owner_id?: string;
           viewer_id?: string;
           can_view?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      friend_notes: {
+        Row: {
+          owner_id: string;
+          friend_id: string;
+          remark: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          owner_id: string;
+          friend_id: string;
+          remark: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          owner_id?: string;
+          friend_id?: string;
+          remark?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -823,6 +867,9 @@ export interface Database {
           vibration_enabled: boolean;
           daily_goal_enabled: boolean;
           daily_goal_minutes: number;
+          countdown_enabled: boolean;
+          countdown_title: string;
+          countdown_date: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -837,6 +884,9 @@ export interface Database {
           vibration_enabled?: boolean;
           daily_goal_enabled?: boolean;
           daily_goal_minutes?: number;
+          countdown_enabled?: boolean;
+          countdown_title?: string;
+          countdown_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -851,6 +901,9 @@ export interface Database {
           vibration_enabled?: boolean;
           daily_goal_enabled?: boolean;
           daily_goal_minutes?: number;
+          countdown_enabled?: boolean;
+          countdown_title?: string;
+          countdown_date?: string | null;
           created_at?: string;
           updated_at?: string;
         };

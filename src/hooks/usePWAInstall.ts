@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { hasAnyStudySession } from '../services/studySessions'
 
 const DISMISSED_KEY = 'studybloom:pwa-install-dismissed-at'
 const DISMISS_COOLDOWN = 7 * 24 * 60 * 60 * 1000
@@ -38,9 +39,9 @@ export function usePWAInstall() {
   const [visible, setVisible] = useState(false)
   const [ios, setIos] = useState(false)
   const [embedded, setEmbedded] = useState(false)
+  const [eligible, setEligible] = useState(false)
 
   useEffect(() => {
-    const shouldOffer = !isStandalone() && !wasRecentlyDismissed()
     const currentIOS = isIOS()
     const currentEmbedded = isEmbeddedBrowser()
     setIos(currentIOS)
@@ -49,16 +50,27 @@ export function usePWAInstall() {
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()
       setDeferredPrompt(event as BeforeInstallPromptEvent)
-      if (shouldOffer) setVisible(true)
     }
 
     window.addEventListener('beforeinstallprompt', onBeforeInstallPrompt)
-    const timer = shouldOffer && (currentIOS || currentEmbedded) ? window.setTimeout(() => setVisible(true), 1200) : undefined
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt)
-      if (timer) window.clearTimeout(timer)
     }
   }, [])
+
+  useEffect(() => {
+    let active = true
+    hasAnyStudySession().then((hasHistory) => { if (active) setEligible(hasHistory) }).catch(() => undefined)
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    if (!eligible || isStandalone() || wasRecentlyDismissed()) return
+    if (deferredPrompt) { setVisible(true); return }
+    if (!ios && !embedded) return
+    const timer = window.setTimeout(() => setVisible(true), 1200)
+    return () => window.clearTimeout(timer)
+  }, [deferredPrompt, eligible, embedded, ios])
 
   const install = useCallback(async () => {
     if (!deferredPrompt) return

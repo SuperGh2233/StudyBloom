@@ -110,7 +110,7 @@ drop function if exists public.generate_friend_code();
 | `attendance_records` | 地点签到/签退记录 | 部分唯一索引：每用户最多一条未签退记录；异常结束记 `manual_closed` |
 | `study_sessions` | 学习会话（自由计时 / 番茄专注） | 部分唯一索引：每用户最多一个未完成会话；任务删除时 `task_id` 置空，保留任务名称快照 |
 | `study_session_segments` | 计时片段（唯一时长事实来源） | 部分唯一索引：每会话最多一个未结束片段；休息不产生片段 |
-| `study_preferences` | 番茄偏好跨设备同步 | 主键即 `user_id` |
+| `study_preferences` | 番茄偏好、每日目标和倒计时跨设备同步 | 主键即 `user_id` |
 
 另新增 Haversine 距离函数与 11 个 RPC（签到/签退/异常结束、开始/暂停/继续/结束学习、番茄同步与阶段切换），全部只允许 `authenticated` 执行，`anon` 无表权限也无函数执行权限。
 
@@ -189,6 +189,30 @@ limit 5;
 ```
 
 已有偏好记录会自动得到默认值；设置页保存后，该目标会通过现有的本人 RLS 策略跨设备同步。
+
+### V0.7.0 倒计时与好友备注迁移
+
+已有线上项目继续执行 `migrations/20260815000000_add_countdown_and_friend_notes.sql`。倒计时保存在 `study_preferences`，默认关闭且不预设考试日期；好友备注保存在新的 `friend_notes` 表中。
+
+`friend_notes` 的安全规则：
+
+- 只能为已接受的好友新增或修改备注。
+- 最多 30 个字符，提交空内容会删除备注。
+- 只有 `owner_id = auth.uid()` 的备注人能读取、修改或删除，对方本人不可见。
+- 删除或拉黑好友后，数据库触发器自动删除双方各自的备注。
+
+可在 SQL Editor 验证：
+
+```sql
+select relname, relrowsecurity from pg_class
+where relnamespace = 'public'::regnamespace and relname = 'friend_notes';
+
+select column_name from information_schema.columns
+where table_schema = 'public' and table_name = 'study_preferences'
+  and column_name in ('countdown_enabled', 'countdown_title', 'countdown_date');
+```
+
+第一条应返回 `relrowsecurity = true`，第二条应返回三行。
 
 ### 权限与验证模型
 

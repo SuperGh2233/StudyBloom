@@ -51,7 +51,7 @@ const validV2 = {
     reflection: '今天记得更牢了',
   }],
   studySessionSegments: [{ id: SEGMENT_ID, sessionId: SESSION_ID, segmentKind: 'free', pomodoroRound: null, pomodoroCompletedAt: null, startedAt: '2026-08-10T09:05:00+08:00', endedAt: '2026-08-10T09:53:00+08:00' }],
-  studyPreferences: { defaultMode: 'pomodoro', focusSeconds: 1500, shortBreakSeconds: 300, longBreakSeconds: 900, roundsBeforeLongBreak: 4, soundEnabled: false, vibrationEnabled: true, dailyGoalEnabled: true, dailyGoalMinutes: 120 },
+  studyPreferences: { defaultMode: 'pomodoro', focusSeconds: 1500, shortBreakSeconds: 300, longBreakSeconds: 900, roundsBeforeLongBreak: 4, soundEnabled: false, vibrationEnabled: true, dailyGoalEnabled: true, dailyGoalMinutes: 120, countdownEnabled: true, countdownTitle: '2027 年考研初试', countdownDate: '2026-12-20' },
 }
 
 describe('备份导入校验', () => {
@@ -86,6 +86,8 @@ describe('备份导入校验', () => {
     expect(result.studySessionSegments[0].pomodoroRound).toBeNull()
     expect(result.studyPreferences?.roundsBeforeLongBreak).toBe(4)
     expect(result.studyPreferences?.dailyGoalMinutes).toBe(120)
+    expect(result.studyPreferences?.countdownTitle).toBe('2027 年考研初试')
+    expect(result.studyPreferences?.countdownDate).toBe('2026-12-20')
   })
 
   it('版本 2 拒绝未知字段污染与非法 id', () => {
@@ -118,8 +120,21 @@ describe('备份导入校验', () => {
     expect(result.studyPreferences?.dailyGoalMinutes).toBe(120)
   })
 
+  it('V0.7.0 之前的 version 2 备份默认关闭倒计时', () => {
+    const legacy = { ...validV2, studyPreferences: { ...validV2.studyPreferences } }
+    delete (legacy.studyPreferences as Partial<typeof validV2.studyPreferences>).countdownEnabled
+    delete (legacy.studyPreferences as Partial<typeof validV2.studyPreferences>).countdownTitle
+    delete (legacy.studyPreferences as Partial<typeof validV2.studyPreferences>).countdownDate
+    const result = validateImportData(JSON.stringify(legacy))
+    if (result.version !== 2) throw new Error('expected v2')
+    expect(result.studyPreferences?.countdownEnabled).toBe(false)
+    expect(result.studyPreferences?.countdownTitle).toBe('考研初试')
+    expect(result.studyPreferences?.countdownDate).toBeNull()
+  })
+
   it('拒绝非法预计时长和过长学习感受', () => {
     expect(() => validateImportData(JSON.stringify({ ...validV2, tasks: [{ ...validV2.tasks[0], estimatedMinutes: 0 }] }))).toThrow('任务预计时长格式不正确')
     expect(() => validateImportData(JSON.stringify({ ...validV2, studySessions: [{ ...validV2.studySessions[0], reflection: '学'.repeat(501) }] }))).toThrow('学习记录不能超过 500 个字符')
+    expect(() => validateImportData(JSON.stringify({ ...validV2, studyPreferences: { ...validV2.studyPreferences, countdownDate: null } }))).toThrow('开启倒计时前请选择目标日期')
   })
 })

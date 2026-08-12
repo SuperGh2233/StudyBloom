@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../features/auth/AuthContext'
 import * as shareService from '../services/calendarShares'
 import * as friendshipService from '../services/friendships'
+import * as noteService from '../services/friendNotes'
 import * as profileService from '../services/profiles'
-import type { CalendarShare, Friendship, Profile } from '../types'
+import type { CalendarShare, FriendNote, Friendship, Profile } from '../types'
 import { getErrorMessage } from '../utils/errorMessage'
 
 /** Shared friend data + actions; every mutation reloads so RLS stays the source of truth. */
@@ -13,6 +14,8 @@ export function useFriendships() {
   const [friendships, setFriendships] = useState<Friendship[]>([])
   const [shares, setShares] = useState<CalendarShare[]>([])
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map())
+  const [notes, setNotes] = useState<Map<string, FriendNote>>(new Map())
+  const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -20,8 +23,9 @@ export function useFriendships() {
     if (!me) return
     setLoading(true); setError('')
     try {
-      const [relations, grants] = await Promise.all([friendshipService.listMyFriendships(), shareService.listMyCalendarShares()])
-      setFriendships(relations); setShares(grants)
+      const [relations, grants, noteList, ownProfile] = await Promise.all([friendshipService.listMyFriendships(), shareService.listMyCalendarShares(), noteService.listFriendNotes(), profileService.getMyProfile()])
+      setFriendships(relations); setShares(grants); setNotes(new Map(noteList.map((note) => [note.friendId, note])))
+      setMyProfile(ownProfile)
       const ids = new Set<string>()
       for (const relation of relations) { ids.add(relation.requesterId); ids.add(relation.addresseeId) }
       for (const grant of grants) { ids.add(grant.ownerId); ids.add(grant.viewerId) }
@@ -48,6 +52,7 @@ export function useFriendships() {
   const remove = useCallback(async (id: string) => { await friendshipService.removeFriendship(id); await load() }, [load])
   const block = useCallback(async (id: string) => { await friendshipService.blockUser(id); await load() }, [load])
   const setShare = useCallback(async (viewerId: string, canView: boolean) => { await shareService.setCalendarShare(viewerId, canView); await load() }, [load])
+  const saveNote = useCallback(async (friendId: string, remark: string) => { await noteService.saveFriendNote(friendId, remark); await load() }, [load])
 
-  return { loading, error, me, friendships, profiles, friends, incoming, outgoing, sharedToMe, grantedByMe, counterpartId, relationWith, reload: load, send, accept, reject, cancel, remove, block, setShare }
+  return { loading, error, me, myProfile, friendships, profiles, notes, friends, incoming, outgoing, sharedToMe, grantedByMe, counterpartId, relationWith, reload: load, send, accept, reject, cancel, remove, block, setShare, saveNote }
 }

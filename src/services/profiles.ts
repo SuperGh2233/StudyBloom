@@ -2,6 +2,7 @@ import { getSupabase } from '../lib/supabase';
 import { requireUser } from './auth';
 import type { Database, Profile } from '../types';
 import { AppError, toAppError } from '../utils/errorMessage';
+import { isFriendCode, normalizeFriendCode } from '../utils/friendInvite';
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row'];
 
@@ -14,12 +15,6 @@ export const mapProfile = (row: ProfileRow): Profile => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
-
-const FRIEND_CODE_RE = /^BLOOM-[A-Z0-9]{6}$/;
-
-export function normalizeFriendCode(value: string): string {
-  return value.trim().toUpperCase();
-}
 
 export async function getMyProfile(): Promise<Profile | null> {
   const user = await requireUser();
@@ -35,7 +30,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 /** Exact-match lookup by StudyBloom ID. Fuzzy/email search is intentionally not supported. */
 export async function findProfileByFriendCode(code: string): Promise<Profile | null> {
   const value = normalizeFriendCode(code);
-  if (!FRIEND_CODE_RE.test(value)) throw new AppError('StudyBloom ID 格式应为 BLOOM-XXXXXX', 'VALIDATION');
+  if (!isFriendCode(value)) throw new AppError('StudyBloom ID 格式应为 BLOOM-XXXXXX', 'VALIDATION');
   await requireUser();
   try {
     const { data, error } = await getSupabase().from('profiles').select('*').eq('friend_code', value).maybeSingle();

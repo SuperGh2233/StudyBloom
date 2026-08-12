@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import migration from '../../supabase/migrations/20260812000000_harden_study_data_integrity.sql?raw'
 import v050Migration from '../../supabase/migrations/20260813000000_add_task_study_goals_and_reflections.sql?raw'
 import v060Migration from '../../supabase/migrations/20260814000000_add_daily_study_goal.sql?raw'
+import v070Migration from '../../supabase/migrations/20260815000000_add_countdown_and_friend_notes.sql?raw'
 
 describe('V0.4.1 学习数据迁移契约', () => {
   it('撤销核心表直接写权限并提供受控恢复 RPC', () => {
@@ -35,5 +36,16 @@ describe('V0.6.0 每日学习目标迁移契约', () => {
     expect(v060Migration).toContain('daily_goal_enabled boolean not null default true')
     expect(v060Migration).toContain('daily_goal_minutes integer not null default 120')
     expect(v060Migration).toContain('daily_goal_minutes between 1 and 1440')
+  })
+})
+
+describe('V0.7.0 倒计时与好友备注迁移契约', () => {
+  it('保存单个倒计时并以 RLS 隔离私人好友备注', () => {
+    expect(v070Migration).toContain('countdown_enabled boolean not null default false')
+    expect(v070Migration).toContain('create table if not exists public.friend_notes')
+    expect(v070Migration).toContain('auth.uid() = owner_id')
+    expect(v070Migration).toContain("f.status = 'accepted'")
+    expect(v070Migration).toContain('create trigger friendships_cleanup_notes')
+    expect(v070Migration).toContain('revoke all on table public.friend_notes from anon')
   })
 })

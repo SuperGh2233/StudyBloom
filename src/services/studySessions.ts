@@ -58,6 +58,9 @@ export const mapStudyPreferences = (row: PreferencesRow): StudyPreferences => ({
   vibrationEnabled: row.vibration_enabled,
   dailyGoalEnabled: row.daily_goal_enabled,
   dailyGoalMinutes: row.daily_goal_minutes,
+  countdownEnabled: row.countdown_enabled,
+  countdownTitle: row.countdown_title,
+  countdownDate: row.countdown_date,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 })
@@ -73,6 +76,9 @@ export const defaultStudyPreferences = (userId: string): StudyPreferences => ({
   vibrationEnabled: true,
   dailyGoalEnabled: true,
   dailyGoalMinutes: 120,
+  countdownEnabled: false,
+  countdownTitle: '考研初试',
+  countdownDate: null,
   createdAt: '',
   updatedAt: '',
 })
@@ -180,6 +186,15 @@ export async function getActiveStudySession(): Promise<{ session: StudySession |
     }
     return { session: mapStudySession(data), caughtUpFocus: false }
   } catch (error) { throw toAppError(error, '读取学习会话失败') }
+}
+
+export async function hasAnyStudySession(): Promise<boolean> {
+  const user = await requireUser()
+  try {
+    const { data, error } = await getSupabase().from('study_sessions').select('id').eq('user_id', user.id).limit(1)
+    if (error) throw error
+    return Boolean(data?.length)
+  } catch (error) { throw toAppError(error, '读取学习记录状态失败') }
 }
 
 export async function listSessionSegments(sessionId: string): Promise<StudySessionSegment[]> {
@@ -299,6 +314,14 @@ export async function saveStudyPreferences(update: StudyPreferencesUpdate): Prom
   if (update.vibrationEnabled !== undefined) patch.vibration_enabled = Boolean(update.vibrationEnabled)
   if (update.dailyGoalEnabled !== undefined) patch.daily_goal_enabled = Boolean(update.dailyGoalEnabled)
   if (update.dailyGoalMinutes !== undefined) patch.daily_goal_minutes = assertInRange(update.dailyGoalMinutes, { min: 1, max: 1440 }, '每日学习目标')
+  if (update.countdownEnabled !== undefined) patch.countdown_enabled = Boolean(update.countdownEnabled)
+  if (update.countdownTitle !== undefined) {
+    const title = update.countdownTitle.trim()
+    if (!title || title.length > 30) throw new AppError('倒计时名称需要在 1-30 个字符之间', 'VALIDATION')
+    patch.countdown_title = title
+  }
+  if (update.countdownDate !== undefined) patch.countdown_date = update.countdownDate === null ? null : assertDateKey(update.countdownDate, '倒计时日期')
+  if (update.countdownEnabled && update.countdownDate === null) throw new AppError('开启倒计时前请选择目标日期', 'VALIDATION')
   if (Object.keys(patch).length <= 1) throw new AppError('没有需要保存的学习偏好', 'VALIDATION')
   try {
     const { data, error } = await getSupabase()

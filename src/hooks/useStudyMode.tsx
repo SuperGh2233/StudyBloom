@@ -13,7 +13,7 @@ interface StudySessionContextValue {
   nowMs: number
   /** Increments whenever a pomodoro phase finished (incl. while the page was away). */
   phaseEndSignal: number
-  refresh: () => Promise<void>
+  refresh: () => Promise<StudySession | null>
   start: (input: StartSessionInput) => Promise<StudySession>
   pause: () => Promise<void>
   resume: () => Promise<void>
@@ -35,6 +35,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   const [phaseEndSignal, setPhaseEndSignal] = useState(0)
   const sessionRef = useRef<StudySession | null>(null)
   const syncingRef = useRef(false)
+  const startingRef = useRef<Promise<StudySession> | null>(null)
   const loadedRef = useRef(false)
 
   useEffect(() => { sessionRef.current = session }, [session])
@@ -50,7 +51,7 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refresh = useCallback(async (initial = false) => {
-    if (syncingRef.current) return
+    if (syncingRef.current) return sessionRef.current
     syncingRef.current = true
     if (initial) setLoading(true)
     try {
@@ -59,10 +60,12 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
       applySession(next, undefined, caughtUpFocus)
       setSegments(nextSegments)
       setError('')
+      return next
     } catch (reason) {
       // Keep whatever we already show; never blank the page on a failed poll.
       if (!sessionRef.current) applySession(null)
       setError(getErrorMessage(reason, '读取学习状态失败'))
+      return sessionRef.current
     } finally {
       syncingRef.current = false
       if (initial) { setLoading(false); loadedRef.current = true }
@@ -111,10 +114,15 @@ export function StudySessionProvider({ children }: { children: ReactNode }) {
     setSegments(await studyService.listSessionSegments(next.id))
   }, [applySession])
 
-  const start = useCallback(async (input: StartSessionInput) => {
-    const next = await studyService.startStudySession(input)
-    await reloadSegments(next)
-    return next
+  const start = useCallback((input: StartSessionInput) => {
+    if (startingRef.current) return startingRef.current
+    const pending = (async () => {
+      const next = await studyService.startStudySession(input)
+      await reloadSegments(next)
+      return next
+    })().finally(() => { startingRef.current = null })
+    startingRef.current = pending
+    return pending
   }, [reloadSegments])
 
   const pause = useCallback(async () => {

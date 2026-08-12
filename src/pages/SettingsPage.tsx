@@ -1,6 +1,6 @@
-import { Copy, Download, FileJson, LogOut, MapPin, Settings2, Target, Trash2, Upload, UserRound, Users } from 'lucide-react'
+import { CalendarClock, Copy, Download, FileJson, LogOut, MapPin, Settings2, Target, Trash2, Upload, UserRound, Users } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Input } from '../components/FormField'
@@ -21,6 +21,7 @@ export function SettingsPage() {
   const { user, signOut } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
   const friends = useFriendships()
   const fileInput = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<StudyBloomExport | null>(null)
@@ -31,6 +32,9 @@ export function SettingsPage() {
   const [friendToRemove, setFriendToRemove] = useState<Friendship | null>(null)
   const [goalEnabled, setGoalEnabled] = useState(true)
   const [goalMinutes, setGoalMinutes] = useState('120')
+  const [countdownEnabled, setCountdownEnabled] = useState(false)
+  const [countdownTitle, setCountdownTitle] = useState('考研初试')
+  const [countdownDate, setCountdownDate] = useState('')
 
   useEffect(() => {
     let active = true
@@ -41,14 +45,24 @@ export function SettingsPage() {
   }, [])
 
   useEffect(() => {
+    if (!location.hash) return
+    const targetId = decodeURIComponent(location.hash.slice(1))
+    const frame = window.requestAnimationFrame(() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [location.hash])
+
+  useEffect(() => {
     let active = true
     getStudyPreferences()
       .then((preferences) => {
         if (!active || !preferences) return
         setGoalEnabled(preferences.dailyGoalEnabled)
         setGoalMinutes(String(preferences.dailyGoalMinutes))
+        setCountdownEnabled(preferences.countdownEnabled)
+        setCountdownTitle(preferences.countdownTitle)
+        setCountdownDate(preferences.countdownDate ?? '')
       })
-      .catch(() => { /* defaults remain until the V0.6 migration is applied */ })
+      .catch(() => { /* defaults remain until the latest preferences migration is applied */ })
     return () => { active = false }
   }, [])
 
@@ -132,6 +146,14 @@ export function SettingsPage() {
     runPrivacy('daily-goal', () => saveStudyPreferences({ dailyGoalEnabled: goalEnabled, dailyGoalMinutes: minutes }), '每日学习目标已保存')
   }
 
+  const saveCountdown = (event: FormEvent) => {
+    event.preventDefault()
+    const title = countdownTitle.trim()
+    if (!title || title.length > 30) return showToast('倒计时名称需要在 1-30 个字符之间', 'error')
+    if (countdownEnabled && !countdownDate) return showToast('开启倒计时前请选择目标日期', 'error')
+    runPrivacy('countdown', () => saveStudyPreferences({ countdownEnabled, countdownTitle: title, countdownDate: countdownDate || null }), '考研倒计时已保存')
+  }
+
   const exportCsv = (key: string, name: string, create: () => Promise<string>) => {
     if (busy) return
     setBusy(key)
@@ -191,11 +213,12 @@ export function SettingsPage() {
                   {friends.friends.map((relation) => {
                     const friendId = friends.counterpartId(relation)
                     const profile = friends.profiles.get(friendId)
+                    const friendName = friends.notes.get(friendId)?.remark ?? profile?.displayName ?? '未知用户'
                     const granted = friends.grantedByMe.has(friendId)
                     return (
                       <div key={relation.id} className="flex min-w-0 flex-wrap items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold">{profile?.displayName ?? '未知用户'}</p>
+                          <p className="truncate text-sm font-semibold">{friendName}</p>
                           <p className="truncate text-xs text-[var(--muted)]">{profile?.friendCode}</p>
                         </div>
                         <label className="flex shrink-0 items-center gap-2 text-xs text-[var(--muted)]">允许查看我的日历
@@ -203,13 +226,13 @@ export function SettingsPage() {
                             type="button"
                             role="switch"
                             aria-checked={granted}
-                            aria-label={`允许 ${profile?.displayName ?? '好友'} 查看我的日历`}
+                            aria-label={`允许 ${friendName} 查看我的日历`}
                             className={`focus-ring relative h-8 w-14 shrink-0 rounded-full transition ${granted ? 'bg-[var(--accent-strong)]' : 'bg-[var(--line)]'}`}
                             onClick={() => runPrivacy(`share-${friendId}`, () => friends.setShare(friendId, !granted), granted ? '已关闭日历共享' : '已开放日历')}
                             disabled={Boolean(busy)}
                           ><span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${granted ? 'left-7' : 'left-1'}`} /></button>
                         </label>
-                        <Button variant="ghost" className="min-h-11 shrink-0 px-2 text-xs text-[var(--rose)]" icon={<Trash2 size={16} />} onClick={() => setFriendToRemove(relation)} aria-label={`删除好友 ${profile?.displayName ?? ''}`}>删除</Button>
+                        <Button variant="ghost" className="min-h-11 shrink-0 px-2 text-xs text-[var(--rose)]" icon={<Trash2 size={16} />} onClick={() => setFriendToRemove(relation)} aria-label={`删除好友 ${friendName}`}>删除</Button>
                       </div>
                     )
                   })}
@@ -220,6 +243,20 @@ export function SettingsPage() {
         )}
       </section>
       <section className="surface mt-5 rounded-2xl p-5 sm:p-6">
+        <div className="flex items-start gap-3"><CalendarClock className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">考研倒计时</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">设置一个目标日期，首页会显示还剩多少天。考试日期每年可能不同，请以官方安排为准。</p></div></div>
+        <form className="mt-5 grid gap-4" onSubmit={saveCountdown}>
+          <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-[var(--surface-soft)] p-3">
+            <div className="min-w-0"><span className="text-sm font-semibold">在首页显示倒计时</span><p className="mt-0.5 text-xs text-[var(--muted)]">关闭后保留名称和日期，随时可以重新开启。</p></div>
+            <button type="button" role="switch" aria-checked={countdownEnabled} className={`focus-ring relative h-8 w-14 shrink-0 rounded-full transition ${countdownEnabled ? 'bg-[var(--accent-strong)]' : 'bg-[var(--line)]'}`} onClick={() => setCountdownEnabled((value) => !value)}><span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${countdownEnabled ? 'left-7' : 'left-1'}`} /></button>
+          </div>
+          <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <Input label="倒计时名称" name="countdown-title" value={countdownTitle} onChange={(event) => setCountdownTitle(event.target.value)} placeholder="例如：2027 年考研初试" maxLength={30} />
+            <Input label="目标日期" name="countdown-date" type="date" value={countdownDate} onChange={(event) => setCountdownDate(event.target.value)} />
+          </div>
+          <Button className="w-full sm:w-auto sm:justify-self-end" type="submit" loading={busy === 'countdown'}>保存倒计时</Button>
+        </form>
+      </section>
+      <section id="daily-goal" className="surface mt-5 scroll-mt-24 rounded-2xl p-5 sm:p-6">
         <div className="flex items-start gap-3"><Target className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">每日学习目标</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">设置每天希望投入的学习时间，默认 120 分钟。关闭后仍会正常统计学习时长。</p></div></div>
         <form className="mt-5 grid gap-4" onSubmit={saveGoal}>
           <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-[var(--surface-soft)] p-3">
@@ -232,7 +269,7 @@ export function SettingsPage() {
           </div>
         </form>
       </section>
-      <section className="surface mt-5 rounded-2xl p-5 sm:p-6">
+      <section id="study-locations" className="surface mt-5 scroll-mt-24 rounded-2xl p-5 sm:p-6">
         <div className="flex items-start gap-3"><MapPin className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">学习地点</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">签到用于记录你真实在某个地方学习。位置只在你主动点击签到/签退时获取一次。</p></div></div>
         <StudyLocationSettings />
       </section>
@@ -247,7 +284,7 @@ export function SettingsPage() {
       <ConfirmDialog open={Boolean(pendingMode)} title={pendingMode === 'overwrite' ? '覆盖同日期数据？' : '追加导入计划？'} description={pendingMode === 'overwrite' ? '导入文件涉及的日期将先删除原任务与日期设置，再写入备份内容。' : '新任务会追加到已有计划之后，已存在的日期设置会保留。'} confirmLabel="开始导入" loading={busy === 'import'} onClose={() => setPendingMode(null)} onConfirm={confirmImport} />
       <ConfirmDialog
         open={Boolean(friendToRemove)}
-        title={`删除好友 ${friendToRemove ? (friends.profiles.get(friends.counterpartId(friendToRemove))?.displayName ?? '该用户') : ''}？`}
+        title={`删除好友 ${friendToRemove ? (friends.notes.get(friends.counterpartId(friendToRemove))?.remark ?? friends.profiles.get(friends.counterpartId(friendToRemove))?.displayName ?? '该用户') : ''}？`}
         description="删除后双方的日历授权会被清除，对方需要重新发送好友申请。"
         confirmLabel="删除"
         danger

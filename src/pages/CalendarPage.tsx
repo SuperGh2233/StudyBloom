@@ -9,9 +9,17 @@ import { DesktopCalendar } from '../features/calendar/DesktopCalendar'
 import { MobileCalendarView } from '../features/calendar/MobileCalendar'
 import { DayEditor } from '../features/tasks/DayEditor'
 import { DailyGoalCard } from '../features/study/DailyGoalCard'
+import { ExamCountdownCard } from '../features/study/ExamCountdownCard'
+import { FirstRunSheet } from '../features/study/FirstRunSheet'
+import { ProgressivePrompt } from '../features/study/ProgressivePrompt'
+import { TodayStudyCard } from '../features/study/TodayStudyCard'
 import { useDailyStudyGoal } from '../hooks/useDailyStudyGoal'
+import { useFirstRunOnboarding } from '../hooks/useFirstRunOnboarding'
 import { useMonthPlans } from '../hooks/useMonthPlans'
+import { useQuickStartStudy } from '../hooks/useQuickStartStudy'
+import { useStudyMode } from '../hooks/useStudyMode'
 import { useTaskStudySummaries } from '../hooks/useTaskStudySummaries'
+import { useTodayTasks } from '../hooks/useTodayTasks'
 import { todayDateKey } from '../utils/date'
 import { getErrorMessage } from '../utils/errorMessage'
 
@@ -20,8 +28,13 @@ export function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState(() => todayDateKey())
   const [editorOpen, setEditorOpen] = useState(false)
   const data = useMonthPlans(month)
+  const todayRefreshKey = data.tasks.filter((task) => task.planDate === todayDateKey()).map((task) => `${task.id}:${task.completed}:${task.updatedAt}`).join('|')
+  const today = useTodayTasks(todayRefreshKey)
   const studySummaries = useTaskStudySummaries(data.tasks.map((task) => task.id))
   const dailyGoal = useDailyStudyGoal()
+  const study = useStudyMode()
+  const quickStart = useQuickStartStudy()
+  const firstRun = useFirstRunOnboarding()
   const { showToast } = useToast()
   const toggleFromCalendar = (id: string, completed: boolean) => data.toggleTask(id, completed).catch((error) => { showToast(getErrorMessage(error, '更新任务失败'), 'error') })
   const completed = useMemo(() => data.tasks.filter((task) => task.completed).length, [data.tasks])
@@ -31,6 +44,12 @@ export function CalendarPage() {
   const openEditor = (key: string) => { setSelectedDate(key); setEditorOpen(true) }
 
   const goToday = () => { const now = new Date(); setMonth(startOfMonth(now)); setSelectedDate(todayDateKey(now)) }
+  const createTodayTask = async (title: string, estimatedMinutes: number) => {
+    const task = await today.addTask(title, estimatedMinutes)
+    void data.reload(true)
+    return task
+  }
+  const allTodayTasksCompleted = today.tasks.length > 0 && today.tasks.every((task) => task.completed)
 
   return (
     <div className="gentle-enter min-w-0">
@@ -47,7 +66,21 @@ export function CalendarPage() {
         </div>
       </header>
 
-      {!dailyGoal.loading && <div className="mb-4"><DailyGoalCard compact {...dailyGoal} /></div>}
+      <TodayStudyCard
+        tasks={today.tasks}
+        tasksLoading={today.loading}
+        session={study.session}
+        segments={study.segments}
+        nowMs={study.nowMs}
+        studiedSeconds={dailyGoal.studiedSeconds}
+        busy={quickStart.busy}
+        onCreateTask={createTodayTask}
+        onStart={quickStart.start}
+      />
+
+      <ProgressivePrompt hidden={firstRun.open || firstRun.loading} studiedSeconds={dailyGoal.studiedSeconds} dailyGoalEnabled={dailyGoal.enabled} activeStudyDays={dailyGoal.activeStudyDays} allTodayTasksCompleted={allTodayTasksCompleted} />
+
+      <div className="mt-5">
 
       {data.error && <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--rose-soft)] px-4 py-3 text-sm text-[var(--rose)]" role="alert"><span className="min-w-0 flex-1 break-words">{data.error}</span><Button variant="secondary" className="shrink-0" icon={<RefreshCw size={16} />} onClick={() => data.reload()}>重新加载</Button></div>}
 
@@ -61,7 +94,14 @@ export function CalendarPage() {
         </div>
       </div>
 
+      {!dailyGoal.loading && <div className={`mt-4 grid gap-3 ${dailyGoal.countdownEnabled && dailyGoal.countdownDate ? 'lg:grid-cols-2' : ''}`}>
+        {dailyGoal.countdownEnabled && dailyGoal.countdownDate && <ExamCountdownCard title={dailyGoal.countdownTitle} targetDate={dailyGoal.countdownDate} />}
+        <DailyGoalCard compact {...dailyGoal} />
+      </div>}
+
       {!data.loading && !data.error && data.tasks.length === 0 && data.planDays.length === 0 && <div className="mt-4 rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface)]"><EmptyState title="这个月还没有计划" description="点击日历中的任意一天，写下第一件准备完成的小事。" /></div>}
+
+      </div>
 
       <DayEditor
         open={editorOpen}
@@ -78,6 +118,7 @@ export function CalendarPage() {
         onSavePlanDay={data.savePlanDay}
         onCopy={data.copyDay}
       />
+      <FirstRunSheet open={firstRun.open} onCreateTask={createTodayTask} onStart={quickStart.start} onDismiss={firstRun.dismiss} onComplete={firstRun.complete} />
     </div>
   )
 }

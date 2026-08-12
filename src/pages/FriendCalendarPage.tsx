@@ -8,6 +8,7 @@ import { LoadingState } from '../components/LoadingState'
 import { DateCell } from '../features/calendar/MobileCalendar'
 import { useFriendCalendar } from '../hooks/useFriendCalendar'
 import { listProfilesByIds } from '../services/profiles'
+import { getFriendNote } from '../services/friendNotes'
 import type { PlanDay, Profile, Task } from '../types'
 import { dateKeyFromParts, todayDateKey } from '../utils/date'
 
@@ -22,11 +23,13 @@ export function FriendCalendarPage() {
   const [month, setMonth] = useState(() => startOfMonth(new Date()))
   const [selectedDate, setSelectedDate] = useState(() => todayDateKey())
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [friendRemark, setFriendRemark] = useState('')
   const data = useFriendCalendar(id, month)
 
   useEffect(() => {
     let active = true
     listProfilesByIds([id]).then((list) => { if (active) setProfile(list[0] ?? null) }).catch(() => { /* handled by calendar error state */ })
+    getFriendNote(id).then((note) => { if (active) setFriendRemark(note?.remark ?? '') }).catch(() => { /* profile name remains available */ })
     return () => { active = false }
   }, [id])
 
@@ -35,6 +38,7 @@ export function FriendCalendarPage() {
   const selectedTasks = data.tasksByDate.get(selectedDate) ?? []
   const selectedPlanDay = data.planDaysByDate.get(selectedDate)
   const goToday = () => { const now = new Date(); setMonth(startOfMonth(now)); setSelectedDate(todayDateKey(now)) }
+  const friendName = friendRemark || profile?.displayName || '好友'
 
   return (
     <div className="gentle-enter min-w-0">
@@ -50,8 +54,8 @@ export function FriendCalendarPage() {
               ? <img src={profile.avatarUrl} alt="" className="h-11 w-11 shrink-0 rounded-full object-cover sm:h-12 sm:w-12" />
               : <span aria-hidden="true" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-lg font-bold text-[var(--accent-strong)] sm:h-12 sm:w-12">{profile?.displayName?.trim().charAt(0).toUpperCase() || '?'}</span>}
             <div className="min-w-0">
-              <h1 className="truncate text-[22px] font-bold tracking-[-0.03em] sm:text-4xl">{profile?.displayName ?? '好友'}</h1>
-              <p className="truncate text-xs text-[var(--muted)] sm:text-sm">{profile?.friendCode}</p>
+              <h1 className="truncate text-[22px] font-bold tracking-[-0.03em] sm:text-4xl">{friendName}</h1>
+              <p className="truncate text-xs text-[var(--muted)] sm:text-sm">{friendRemark ? `${profile?.displayName ?? '好友'} · ${profile?.friendCode ?? ''}` : profile?.friendCode}</p>
             </div>
           </div>
         </div>

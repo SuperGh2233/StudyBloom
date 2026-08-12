@@ -76,6 +76,12 @@ const requireArray = (value: unknown): unknown[] => {
   return value
 }
 
+const requireText = (value: unknown, maxLength: number, message: string): string => {
+  const text = typeof value === 'string' ? value.trim() : ''
+  if (!text || text.length > maxLength) throw new AppError(message, 'VALIDATION')
+  return text
+}
+
 /** Sanitizes tasks for v1 and v2 alike: only whitelisted fields survive, ids only when present. */
 const sanitizeTasks = (value: unknown): ExportTask[] => requireArray(value).map((item) => {
   if (!isObject(item)) throw new AppError('任务数据格式不正确', 'VALIDATION')
@@ -199,6 +205,9 @@ export const parseExportStudyPreferences = (value: unknown): ExportStudyPreferen
   if (value === undefined || value === null) return null
   const message = '学习偏好数据格式不正确'
   if (!isObject(value) || (value.defaultMode !== 'free' && value.defaultMode !== 'pomodoro')) throw new AppError(message, 'VALIDATION')
+  const countdownEnabled = value.countdownEnabled === undefined ? false : Boolean(value.countdownEnabled)
+  const countdownDate = value.countdownDate === undefined || value.countdownDate === null ? null : assertDateKey(value.countdownDate, '倒计时日期')
+  if (countdownEnabled && !countdownDate) throw new AppError('开启倒计时前请选择目标日期', 'VALIDATION')
   return {
     defaultMode: value.defaultMode as StudyMode,
     focusSeconds: requirePreferenceInt(value.focusSeconds, POMODORO_LIMITS.focusSeconds),
@@ -209,6 +218,9 @@ export const parseExportStudyPreferences = (value: unknown): ExportStudyPreferen
     vibrationEnabled: Boolean(value.vibrationEnabled),
     dailyGoalEnabled: value.dailyGoalEnabled === undefined ? true : Boolean(value.dailyGoalEnabled),
     dailyGoalMinutes: value.dailyGoalMinutes === undefined ? 120 : requirePreferenceInt(value.dailyGoalMinutes, { min: 1, max: 1440 }),
+    countdownEnabled,
+    countdownTitle: value.countdownTitle === undefined ? '考研初试' : requireText(value.countdownTitle, 30, message),
+    countdownDate,
   }
 }
 
@@ -319,6 +331,9 @@ export async function exportAllDataJson(): Promise<string> {
         vibrationEnabled: preferenceRow.vibration_enabled,
         dailyGoalEnabled: preferenceRow.daily_goal_enabled,
         dailyGoalMinutes: preferenceRow.daily_goal_minutes,
+        countdownEnabled: preferenceRow.countdown_enabled,
+        countdownTitle: preferenceRow.countdown_title,
+        countdownDate: preferenceRow.countdown_date,
       } : null,
     }
     return JSON.stringify(payload, null, 2)
