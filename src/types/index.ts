@@ -236,6 +236,8 @@ export interface StudyPreferences {
   roundsBeforeLongBreak: number;
   soundEnabled: boolean;
   vibrationEnabled: boolean;
+  dailyGoalEnabled: boolean;
+  dailyGoalMinutes: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -248,6 +250,8 @@ export interface StudyPreferencesUpdate {
   roundsBeforeLongBreak?: number;
   soundEnabled?: boolean;
   vibrationEnabled?: boolean;
+  dailyGoalEnabled?: boolean;
+  dailyGoalMinutes?: number;
 }
 
 export interface GeoPoint {
@@ -288,6 +292,24 @@ export interface StudyTimeStatistics {
   averageDailySeconds: number;
   byDay: StudyDailyPoint[];
   byTask: StudyTaskPoint[];
+}
+
+export interface StudyTimeSlot {
+  key: 'morning' | 'afternoon' | 'evening' | 'night';
+  label: string;
+  seconds: number;
+}
+
+export interface WeeklyStudyReview {
+  startDate: DateKey;
+  endDate: DateKey;
+  totalSeconds: number;
+  previousWeekSeconds: number;
+  changePercent: number | null;
+  topTaskTitle: string | null;
+  completedTaskCount: number;
+  goalMetDays: number;
+  summary: string;
 }
 
 export interface TaskStudySummary {
@@ -384,6 +406,10 @@ export interface ExportStudyPreferences {
   roundsBeforeLongBreak: number;
   soundEnabled: boolean;
   vibrationEnabled: boolean;
+  /** Optional for compatibility with backups created before V0.6.0. */
+  dailyGoalEnabled?: boolean;
+  /** Optional for compatibility with backups created before V0.6.0. */
+  dailyGoalMinutes?: number;
 }
 
 export interface StudyBloomExportV1 {
@@ -795,6 +821,8 @@ export interface Database {
           rounds_before_long_break: number;
           sound_enabled: boolean;
           vibration_enabled: boolean;
+          daily_goal_enabled: boolean;
+          daily_goal_minutes: number;
           created_at: string;
           updated_at: string;
         };
@@ -807,6 +835,8 @@ export interface Database {
           rounds_before_long_break?: number;
           sound_enabled?: boolean;
           vibration_enabled?: boolean;
+          daily_goal_enabled?: boolean;
+          daily_goal_minutes?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -819,6 +849,8 @@ export interface Database {
           rounds_before_long_break?: number;
           sound_enabled?: boolean;
           vibration_enabled?: boolean;
+          daily_goal_enabled?: boolean;
+          daily_goal_minutes?: number;
           created_at?: string;
           updated_at?: string;
         };

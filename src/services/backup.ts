@@ -207,6 +207,8 @@ export const parseExportStudyPreferences = (value: unknown): ExportStudyPreferen
     roundsBeforeLongBreak: requirePreferenceInt(value.roundsBeforeLongBreak, POMODORO_LIMITS.roundsBeforeLongBreak),
     soundEnabled: Boolean(value.soundEnabled),
     vibrationEnabled: Boolean(value.vibrationEnabled),
+    dailyGoalEnabled: value.dailyGoalEnabled === undefined ? true : Boolean(value.dailyGoalEnabled),
+    dailyGoalMinutes: value.dailyGoalMinutes === undefined ? 120 : requirePreferenceInt(value.dailyGoalMinutes, { min: 1, max: 1440 }),
   }
 }
 
@@ -315,6 +317,8 @@ export async function exportAllDataJson(): Promise<string> {
         roundsBeforeLongBreak: preferenceRow.rounds_before_long_break,
         soundEnabled: preferenceRow.sound_enabled,
         vibrationEnabled: preferenceRow.vibration_enabled,
+        dailyGoalEnabled: preferenceRow.daily_goal_enabled,
+        dailyGoalMinutes: preferenceRow.daily_goal_minutes,
       } : null,
     }
     return JSON.stringify(payload, null, 2)

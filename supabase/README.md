@@ -176,6 +176,20 @@ where table_schema = 'public'
 
 应返回两行。浏览器仍不能直接更新 `study_sessions.reflection`，页面通过 `save_study_session_reflection` 安全保存。
 
+### V0.6.0 每日学习目标迁移
+
+已有线上项目继续执行 `migrations/20260814000000_add_daily_study_goal.sql`。该迁移只为 `study_preferences` 增加每日目标开关和分钟数；默认开启并设为 120 分钟，允许范围为 1–1440 分钟，不修改现有学习会话和签到数据。
+
+可在 SQL Editor 验证：
+
+```sql
+select daily_goal_enabled, daily_goal_minutes
+from public.study_preferences
+limit 5;
+```
+
+已有偏好记录会自动得到默认值；设置页保存后，该目标会通过现有的本人 RLS 策略跨设备同步。
+
 ### 权限与验证模型
 
 - 五张新表全部为「仅本人」策略：`auth.uid() = user_id`。V0.4.1 后三张核心记录表额外撤销浏览器直接写权限。**好友（calendar_shares）不获得任何新表的读取权限**——精确经纬度、签到记录、学习时长明细永不对好友开放。

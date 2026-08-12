@@ -51,7 +51,7 @@ const validV2 = {
     reflection: '今天记得更牢了',
   }],
   studySessionSegments: [{ id: SEGMENT_ID, sessionId: SESSION_ID, segmentKind: 'free', pomodoroRound: null, pomodoroCompletedAt: null, startedAt: '2026-08-10T09:05:00+08:00', endedAt: '2026-08-10T09:53:00+08:00' }],
-  studyPreferences: { defaultMode: 'pomodoro', focusSeconds: 1500, shortBreakSeconds: 300, longBreakSeconds: 900, roundsBeforeLongBreak: 4, soundEnabled: false, vibrationEnabled: true },
+  studyPreferences: { defaultMode: 'pomodoro', focusSeconds: 1500, shortBreakSeconds: 300, longBreakSeconds: 900, roundsBeforeLongBreak: 4, soundEnabled: false, vibrationEnabled: true, dailyGoalEnabled: true, dailyGoalMinutes: 120 },
 }
 
 describe('备份导入校验', () => {
@@ -85,6 +85,7 @@ describe('备份导入校验', () => {
     expect(result.studySessionSegments[0].sessionId).toBe(SESSION_ID)
     expect(result.studySessionSegments[0].pomodoroRound).toBeNull()
     expect(result.studyPreferences?.roundsBeforeLongBreak).toBe(4)
+    expect(result.studyPreferences?.dailyGoalMinutes).toBe(120)
   })
 
   it('版本 2 拒绝未知字段污染与非法 id', () => {
@@ -105,6 +106,16 @@ describe('备份导入校验', () => {
     const v1 = validateImportData(JSON.stringify({ version: 1, exportedAt: '2026-08-04T00:00:00Z', tasks: [{ planDate: '2026-08-04', title: '背单词', sortOrder: 0 }], planDays: [] }))
     expect(v1.version).toBe(1)
     expect(v1.tasks[0].estimatedMinutes).toBeNull()
+  })
+
+  it('V0.6.0 之前的 version 2 备份使用默认每日目标', () => {
+    const legacy = { ...validV2, studyPreferences: { ...validV2.studyPreferences } }
+    delete (legacy.studyPreferences as Partial<typeof validV2.studyPreferences>).dailyGoalEnabled
+    delete (legacy.studyPreferences as Partial<typeof validV2.studyPreferences>).dailyGoalMinutes
+    const result = validateImportData(JSON.stringify(legacy))
+    if (result.version !== 2) throw new Error('expected v2')
+    expect(result.studyPreferences?.dailyGoalEnabled).toBe(true)
+    expect(result.studyPreferences?.dailyGoalMinutes).toBe(120)
   })
 
   it('拒绝非法预计时长和过长学习感受', () => {

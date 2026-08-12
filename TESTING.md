@@ -77,7 +77,7 @@ npm run preview
 
 ## 学习模块
 
-前置条件：Supabase 已按顺序执行 `20260811000000_add_attendance_and_study_mode.sql`、`20260812000000_harden_study_data_integrity.sql` 与 `20260813000000_add_task_study_goals_and_reflections.sql`，设备定位服务可用。
+前置条件：Supabase 已按顺序执行 `20260811000000_add_attendance_and_study_mode.sql`、`20260812000000_harden_study_data_integrity.sql`、`20260813000000_add_task_study_goals_and_reflections.sql` 与 `20260814000000_add_daily_study_goal.sql`，设备定位服务可用。
 
 ### 地点与签到
 
@@ -127,3 +127,9 @@ npm run preview
 32. 「学习详情」显示累计时长、有学习片段的会话次数、最近学习时间和最近 10 条记录；删除任务后，学习页和统计中的任务名称快照及历史时长仍保留。
 33. 学习小结输入 500 字可保存，501 字被阻止；手机输入法弹出时内容可滚动且保存按钮可操作。
 34. V0.4.1 及更早导出的 version 2 备份缺少 `estimatedMinutes` / `reflection` 时仍可导入，分别按未设置和空内容处理。
+35. 设置每日目标为 120 分钟后，首页和统计页的今日时长一致；学习满 120 分钟显示 100% 以上的真实完成率、满进度条和柔和完成提示。
+36. 关闭每日目标后，首页和统计页显示“未开启”，学习时长仍正常累计；重新开启后保留设置的分钟数。
+37. 今天/本周/本月切换时，自由学习与番茄专注占比、按任务时长、每日番茄轮数、有效签到天数、目标达成天数和学习时间段随范围正确变化。
+38. 本周复盘展示本周总时长、相对上周变化、投入最多的任务、本周计划任务完成数、目标达成天数和固定规则生成的温暖总结；不产生任何 AI 或第三方请求。
+39. 分别导出学习会话、每日统计和签到 CSV，使用 Excel 或 Numbers 打开中文不乱码；签到文件只包含地点、时间、距离和结果，不含经纬度。
+40. 导入 V0.6.0 之前、缺少 `dailyGoalEnabled` / `dailyGoalMinutes` 的 version 2 备份时，默认恢复为开启的 120 分钟目标。

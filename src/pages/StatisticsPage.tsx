@@ -1,6 +1,6 @@
 import { eachDayOfInterval, format, parseISO, subDays } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { CalendarCheck2, CalendarDays, CheckCircle2, Clock, Flame, ListChecks, Medal, PlayCircle, RefreshCw, Repeat, Sparkles, Target, Trophy } from 'lucide-react'
+import { CalendarCheck2, CalendarDays, CheckCircle2, Clock, Flame, ListChecks, MapPin, Medal, PlayCircle, RefreshCw, Repeat, Sparkles, Sunrise, Target, TrendingDown, TrendingUp, Trophy } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button } from '../components/Button'
 import { EmptyState } from '../components/EmptyState'
@@ -12,6 +12,7 @@ import type { MonthlyStatistics } from '../types'
 import { getErrorMessage } from '../utils/errorMessage'
 import { formatDurationHuman } from '../utils/studyDuration'
 import { todayDateKey } from '../utils/date'
+import { DailyGoalCard } from '../features/study/DailyGoalCard'
 
 const RANGE_OPTIONS: { kind: StudyRangeKind; label: string }[] = [
   { kind: 'today', label: '今天' },
@@ -63,6 +64,9 @@ export function StatisticsPage() {
   const studyEmpty = studyView
     ? studyView.metrics.totalSeconds === 0 && studyView.metrics.sessionCount === 0 && studyView.lastSevenDays.every((day) => day.seconds === 0)
     : false
+  const todayStudySeconds = studyView?.lastSevenDays.at(-1)?.seconds ?? 0
+  const focusShare = studyView?.metrics.totalSeconds ? Math.round((studyView.metrics.focusSeconds / studyView.metrics.totalSeconds) * 100) : 0
+  const favoriteSlot = studyView?.timeSlots.reduce((best, slot) => slot.seconds > best.seconds ? slot : best, studyView.timeSlots[0])
 
   if (loading) return <LoadingState label="正在整理学习记录..." />
 
@@ -74,6 +78,8 @@ export function StatisticsPage() {
         <p className="mt-2 text-sm text-[var(--muted)]">{format(new Date(), 'yyyy年 M月', { locale: zhCN })}的数据会在这里慢慢积累。</p>
         <p className="mt-1 text-sm text-[var(--muted)]">每一段投入的学习时长，也会在这里留下痕迹。</p>
       </header>
+
+      {studyView && <div className="mb-5"><DailyGoalCard enabled={studyView.goalEnabled} minutes={studyView.goalMinutes} studiedSeconds={todayStudySeconds} /></div>}
 
       <section className="surface rounded-2xl p-5 sm:p-6" aria-label="学习时长统计">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -101,9 +107,17 @@ export function StatisticsPage() {
               <Metric icon={Sparkles} label="自由学习" value={formatDurationHuman(studyView.metrics.freeSeconds)} />
               <Metric icon={Target} label="番茄专注" value={formatDurationHuman(studyView.metrics.focusSeconds)} />
               <Metric icon={Repeat} label="完成番茄轮数" value={studyView.metrics.completedPomodoroRounds} />
+              <Metric icon={MapPin} label="有效签到天数" value={studyView.validAttendanceDays} />
+              <Metric icon={Trophy} label="目标达成天数" value={studyView.goalEnabled ? studyView.goalMetDays : '未开启'} />
+              <Metric icon={Sunrise} label="最常学习时段" value={favoriteSlot?.seconds ? favoriteSlot.label : '暂无'} />
             </div>
 
-            <h3 className="mt-6 text-base font-bold">最近七天</h3>
+            <div className="mt-6 rounded-xl bg-[var(--surface-soft)] p-4">
+              <div className="flex items-center justify-between gap-3 text-sm"><span className="font-semibold">自由学习 {100 - focusShare}%</span><span className="font-semibold text-[var(--accent-strong)]">番茄专注 {focusShare}%</span></div>
+              <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--line)]"><span className="bg-[var(--rose)] opacity-60" style={{ width: `${100 - focusShare}%` }} /><span className="bg-[var(--accent-strong)]" style={{ width: `${focusShare}%` }} /></div>
+            </div>
+
+            <h3 className="mt-6 text-base font-bold">每日学习时长趋势</h3>
             <div className="mt-3 grid grid-cols-7 gap-1.5 sm:gap-3">
               {lastSevenStudy.map(({ date, data }) => {
                 const seconds = data?.seconds ?? 0
@@ -135,9 +149,27 @@ export function StatisticsPage() {
                 </ul>
               </>
             )}
+
+            {favoriteSlot && favoriteSlot.seconds > 0 && (
+              <div className="mt-6"><h3 className="text-base font-bold">学习时间分布</h3><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{studyView.timeSlots.map((slot) => <div key={slot.key} className={`rounded-xl p-3 ${slot.key === favoriteSlot.key ? 'bg-[var(--accent-soft)]' : 'bg-[var(--surface-soft)]'}`}><strong className="block text-sm">{slot.label}</strong><span className="mt-1 block text-xs text-[var(--muted)]">{formatDurationHuman(slot.seconds)}</span></div>)}</div></div>
+            )}
           </>
         )}
       </section>
+
+      {studyView && (
+        <section className="surface mt-5 rounded-2xl p-5 sm:p-6" aria-label="本周学习复盘">
+          <div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]"><Sparkles size={20} /></span><div><p className="text-xs font-semibold text-[var(--accent-strong)]">每周复盘</p><h2 className="mt-0.5 text-lg font-bold">这一周，学得怎么样</h2></div></div>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Metric icon={Clock} label="本周总时长" value={formatDurationHuman(studyView.weeklyReview.totalSeconds)} />
+            <Metric icon={studyView.weeklyReview.changePercent !== null && studyView.weeklyReview.changePercent < 0 ? TrendingDown : TrendingUp} label="相比上周" value={studyView.weeklyReview.changePercent === null ? '上周无记录' : `${studyView.weeklyReview.changePercent >= 0 ? '+' : ''}${studyView.weeklyReview.changePercent}%`} />
+            <Metric icon={Target} label="学习最多的任务" value={studyView.weeklyReview.topTaskTitle ?? '暂无'} />
+            <Metric icon={CheckCircle2} label="完成任务" value={`${studyView.weeklyReview.completedTaskCount} 项`} />
+            <Metric icon={Trophy} label="目标达成" value={studyView.goalEnabled ? `${studyView.weeklyReview.goalMetDays} 天` : '未开启'} />
+          </div>
+          <p className="mt-4 rounded-xl bg-[var(--accent-soft)] px-4 py-3 text-sm font-medium leading-6 text-[var(--accent-strong)]">{studyView.weeklyReview.summary}</p>
+        </section>
+      )}
 
       {error && <div className="mt-5 mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--rose-soft)] p-4 text-sm text-[var(--rose)]"><span>{error}</span><Button variant="secondary" icon={<RefreshCw size={16} />} onClick={load}>重试</Button></div>}
 

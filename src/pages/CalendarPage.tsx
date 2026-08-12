@@ -8,6 +8,8 @@ import { useToast } from '../components/ToastProvider'
 import { DesktopCalendar } from '../features/calendar/DesktopCalendar'
 import { MobileCalendarView } from '../features/calendar/MobileCalendar'
 import { DayEditor } from '../features/tasks/DayEditor'
+import { DailyGoalCard } from '../features/study/DailyGoalCard'
+import { useDailyStudyGoal } from '../hooks/useDailyStudyGoal'
 import { useMonthPlans } from '../hooks/useMonthPlans'
 import { useTaskStudySummaries } from '../hooks/useTaskStudySummaries'
 import { todayDateKey } from '../utils/date'
@@ -19,6 +21,7 @@ export function CalendarPage() {
   const [editorOpen, setEditorOpen] = useState(false)
   const data = useMonthPlans(month)
   const studySummaries = useTaskStudySummaries(data.tasks.map((task) => task.id))
+  const dailyGoal = useDailyStudyGoal()
   const { showToast } = useToast()
   const toggleFromCalendar = (id: string, completed: boolean) => data.toggleTask(id, completed).catch((error) => { showToast(getErrorMessage(error, '更新任务失败'), 'error') })
   const completed = useMemo(() => data.tasks.filter((task) => task.completed).length, [data.tasks])
@@ -43,6 +46,8 @@ export function CalendarPage() {
           <Button variant="secondary" className="min-w-0 whitespace-nowrap px-2 text-xs sm:px-4 sm:text-sm" onClick={goToday}>回到今天</Button>
         </div>
       </header>
+
+      {!dailyGoal.loading && <div className="mb-4"><DailyGoalCard compact {...dailyGoal} /></div>}
 
       {data.error && <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--rose-soft)] px-4 py-3 text-sm text-[var(--rose)]" role="alert"><span className="min-w-0 flex-1 break-words">{data.error}</span><Button variant="secondary" className="shrink-0" icon={<RefreshCw size={16} />} onClick={() => data.reload()}>重新加载</Button></div>}
 

@@ -222,3 +222,20 @@ export async function listAttendanceRecordsByDate(planDate: string): Promise<Att
     return (data ?? []).map(mapAttendanceRecord)
   } catch (error) { throw toAppError(error, '读取签到记录失败') }
 }
+
+/** Attendance whose check-in falls inside a local UTC+8 date range. */
+export async function listAttendanceRecordsByRange(startDate: string, endDate: string): Promise<AttendanceRecord[]> {
+  assertDateKey(startDate); assertDateKey(endDate)
+  const user = await requireUser()
+  try {
+    const { data, error } = await getSupabase()
+      .from('attendance_records')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('check_in_at', `${startDate}T00:00:00+08:00`)
+      .lt('check_in_at', `${addDays(endDate, 1)}T00:00:00+08:00`)
+      .order('check_in_at', { ascending: true })
+    if (error) throw error
+    return (data ?? []).map(mapAttendanceRecord)
+  } catch (error) { throw toAppError(error, '读取签到记录失败') }
+}

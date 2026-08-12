@@ -187,6 +187,8 @@ async function restoreStudyRecords(client: SupabaseClient<Database>, userId: str
       rounds_before_long_break: study.preferences.roundsBeforeLongBreak,
       sound_enabled: study.preferences.soundEnabled,
       vibration_enabled: study.preferences.vibrationEnabled,
+      daily_goal_enabled: study.preferences.dailyGoalEnabled ?? true,
+      daily_goal_minutes: study.preferences.dailyGoalMinutes ?? 120,
     }, { onConflict: 'user_id' })
     if (error) throw error
   }

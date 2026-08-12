@@ -3,6 +3,7 @@ import type { StudySession, StudySessionSegment } from '../types'
 import {
   activeSessionSummary,
   calculateStudyStatistics,
+  calculateStudyTimeSlots,
   formatClockHMS,
   formatClockMS,
   formatDurationHuman,
@@ -395,5 +396,14 @@ describe('学习统计', () => {
     const segments = [segment({ sessionId: 'live', startedAt: '2026-08-10T09:00:00+08:00', endedAt: null })]
     const stats = calculateStudyStatistics(sessions, segments, range, T0 + 48 * MIN)
     expect(stats.totalSeconds).toBe(48 * 60)
+  })
+
+  it('跨时段学习按本地小时边界拆分', () => {
+    const sessions = [session({ id: 'slot', startedAt: '2026-08-10T11:30:00+08:00', endedAt: '2026-08-10T18:30:00+08:00' })]
+    const segments = [segment({ sessionId: 'slot', startedAt: '2026-08-10T11:30:00+08:00', endedAt: '2026-08-10T18:30:00+08:00' })]
+    const slots = calculateStudyTimeSlots(sessions, segments, range)
+    expect(slots.find((slot) => slot.key === 'morning')?.seconds).toBe(30 * 60)
+    expect(slots.find((slot) => slot.key === 'afternoon')?.seconds).toBe(6 * 60 * 60)
+    expect(slots.find((slot) => slot.key === 'evening')?.seconds).toBe(30 * 60)
   })
 })

@@ -14,6 +14,8 @@ StudyBloom 是一个温暖、简洁的个人学习计划日历，让每天的努
 - 好友系统：StudyBloom ID 精确添加、申请接受/拒绝/取消、删除与拉黑
 - 好友日历：所有者逐个授权后，好友可只读查看对方月历和完成情况
 - 学习模块：学习地点设置、地点签到/签退、自由计时、番茄专注、学习记录与统计
+- 每日学习目标、学习时长趋势、学习模式占比、时间段分布和每周复盘
+- 学习会话、每日学习统计与隐私处理后的签到记录 CSV 导出
 - Supabase Auth、PostgreSQL 和 RLS 数据隔离
 - iPhone 添加到主屏幕的 PWA 支持
 - 静态资源预缓存、离线状态提示和版本更新提示
@@ -24,8 +26,9 @@ StudyBloom 是一个温暖、简洁的个人学习计划日历，让每天的努
 - **地点签到/签退**：只在主动点击签到/签退时获取一次浏览器定位（`navigator.geolocation`，精度需 ≤150 米）；距离由数据库用 Haversine 复核，超出半径会给出中文提示。忘记签退时可用「异常结束本次记录」（二次确认，不计有效在场时长）。
 - **学习模式**：自由计时（开始/暂停/继续/结束）与番茄专注（可配置专注 15–90 分钟、短休息 3–30、长休息 10–60、长休息间隔 2–8 轮，偏好跨设备同步）。默认关联今日第一项未完成任务，也可选择自由学习；最近选择的模式会跨设备保留。学习时长以数据库计时片段为准，刷新、锁屏、切后台都能恢复。V0.4.1 起核心记录只允许通过数据库 RPC 修改，番茄休息类型也由数据库决定。
 - **V0.5.1 学习闭环**：任务可设置 30/45/60/90/120 分钟快捷目标或自定义分钟数，并显示累计实际时长与进度。结束学习后展示本次时长、番茄轮数和今日累计，可选同步完成任务并写 500 字以内的学习感受；任务详情展示累计时长、次数、最近学习时间和近期记录。
+- **V0.6.0 统计与复盘**：可设置或关闭每日学习目标（默认 120 分钟），首页和统计页展示今日时长与目标完成率。统计补充每日时长、自由/番茄占比、任务投入、每日番茄、有效签到、目标达成和常用学习时段，并通过现有数据生成不依赖 AI 的每周复盘。
 - **隐私**：精确位置仅本人可见，不对好友开放、不进好友日历、不持续采集、不发送给 Supabase 以外的第三方。浏览器定位可被伪造，本功能不是防作弊考勤系统。
-- **统计**：统计页新增今天/本周/本月学习时长、日均、次数、最长单次、自由/番茄时长、完成番茄轮数、近七天柱形图和按任务统计。
+- **数据导出**：设置页可分别导出学习会话、每日学习统计和签到记录 CSV；签到 CSV 仅包含地点名称、时间、距离与结果，不包含经纬度。
 
 ## 技术栈
 
@@ -47,7 +50,7 @@ VITE_SUPABASE_ANON_KEY=
 
 `.env.local` 已被 Git 忽略。只能使用 Supabase 的 Publishable/anon key，不能使用 `service_role` key。
 
-> 学习模块需要在 Supabase 按文件名顺序执行 `20260811000000_add_attendance_and_study_mode.sql`、`20260812000000_harden_study_data_integrity.sql` 和 `20260813000000_add_task_study_goals_and_reflections.sql`（步骤见 [supabase/README.md](supabase/README.md)），否则学习页、统计和完整备份恢复会提示错误。
+> 学习模块需要在 Supabase 按文件名顺序执行 `20260811000000_add_attendance_and_study_mode.sql`、`20260812000000_harden_study_data_integrity.sql`、`20260813000000_add_task_study_goals_and_reflections.sql` 和 `20260814000000_add_daily_study_goal.sql`（步骤见 [supabase/README.md](supabase/README.md)），否则学习页、统计和完整备份恢复会提示错误。
 
 常用检查命令：
 
@@ -109,7 +112,7 @@ supabase/
 
 数据库脚本位于 `supabase/schema.sql`，迁移位于 `supabase/migrations/`。核心表为 `plan_days` 和 `tasks`，所有策略只允许用户访问自己的数据。
 
-学习模块由 `20260811000000_add_attendance_and_study_mode.sql` 引入，`20260812000000_harden_study_data_integrity.sql` 完成 V0.4.1 权限加固，`20260813000000_add_task_study_goals_and_reflections.sql` 增加 V0.5.1 任务目标与学习感受：
+学习模块由 `20260811000000_add_attendance_and_study_mode.sql` 引入，`20260812000000_harden_study_data_integrity.sql` 完成 V0.4.1 权限加固，`20260813000000_add_task_study_goals_and_reflections.sql` 增加 V0.5.1 任务目标与学习感受，`20260814000000_add_daily_study_goal.sql` 增加 V0.6.0 每日学习目标：
 
 | 表 | 作用 | 关键规则 |
 | --- | --- | --- |
@@ -117,7 +120,7 @@ supabase/
 | `attendance_records` | 地点签到/签退 | 每用户最多一条未签退记录；异常结束 `manual_closed` |
 | `study_sessions` | 学习会话（自由/番茄） | 每用户最多一个未完成会话；任务删除后保留名称快照 |
 | `study_session_segments` | 计时片段（时长唯一事实来源） | 休息不产生片段；记录番茄轮次和实际完成时间 |
-| `study_preferences` | 番茄偏好跨设备同步 | 主键为 `user_id` |
+| `study_preferences` | 番茄偏好与每日目标跨设备同步 | 主键为 `user_id`；每日目标 1–1440 分钟且可关闭 |
 
 所有状态切换通过数据库 RPC 原子完成（签到/签退、开始/暂停/继续/结束、番茄同步与阶段切换）。浏览器对签到、会话和计时片段只有本人只读权限，不能直接伪造写入；`anon` 无表权限也无函数执行权限。执行步骤与验证方法见 [supabase/README.md](supabase/README.md)。
 
@@ -140,3 +143,7 @@ supabase/
 ## 部署
 
 项目适合部署到 Vercel。完整配置和 PWA 验证步骤见 [DEPLOYMENT.md](DEPLOYMENT.md)，人工测试清单见 [TESTING.md](TESTING.md)。
+
+## 下一阶段
+
+V0.7.0 暂列为体验增强，不包含在本次实现中：番茄钟快捷预设与声音/振动测试、温和提醒、目标连续达成提示、日历学习时长圆点、学习记录搜索筛选，以及明确标记为“手动记录”的补录能力。

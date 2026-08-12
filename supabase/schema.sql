@@ -1687,3 +1687,14 @@ revoke all on function public.save_study_session_reflection(uuid, text) from pub
 grant execute on function public.save_study_session_reflection(uuid, text) to authenticated;
 revoke all on function public.restore_study_reflections(jsonb) from public, anon;
 grant execute on function public.restore_study_reflections(jsonb) to authenticated;
+
+-- V0.6.0: optional daily study goal used by the home and statistics pages.
+alter table public.study_preferences
+  add column if not exists daily_goal_enabled boolean not null default true,
+  add column if not exists daily_goal_minutes integer not null default 120;
+
+alter table public.study_preferences
+  drop constraint if exists study_preferences_daily_goal_minutes_check;
+alter table public.study_preferences
+  add constraint study_preferences_daily_goal_minutes_check
+  check (daily_goal_minutes between 1 and 1440);

@@ -1,4 +1,4 @@
-import { Copy, Download, FileJson, LogOut, MapPin, Settings2, Trash2, Upload, UserRound, Users } from 'lucide-react'
+import { Copy, Download, FileJson, LogOut, MapPin, Settings2, Target, Trash2, Upload, UserRound, Users } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
@@ -11,6 +11,8 @@ import { useFriendships } from '../hooks/useFriendships'
 import { importPlan } from '../services/importExport'
 import { exportAllDataJson, validateImportData } from '../services/backup'
 import { getMyProfile, updateMyProfile } from '../services/profiles'
+import { getStudyPreferences, saveStudyPreferences } from '../services/studySessions'
+import { exportAttendanceCsv, exportDailyStudyCsv, exportStudySessionsCsv } from '../services/csvExport'
 import type { CopyMode, Friendship, Profile, StudyBloomExport } from '../types'
 import { todayDateKey } from '../utils/date'
 import { getErrorMessage } from '../utils/errorMessage'
@@ -27,6 +29,8 @@ export function SettingsPage() {
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [friendToRemove, setFriendToRemove] = useState<Friendship | null>(null)
+  const [goalEnabled, setGoalEnabled] = useState(true)
+  const [goalMinutes, setGoalMinutes] = useState('120')
 
   useEffect(() => {
     let active = true
@@ -36,17 +40,30 @@ export function SettingsPage() {
     return () => { active = false }
   }, [])
 
+  useEffect(() => {
+    let active = true
+    getStudyPreferences()
+      .then((preferences) => {
+        if (!active || !preferences) return
+        setGoalEnabled(preferences.dailyGoalEnabled)
+        setGoalMinutes(String(preferences.dailyGoalMinutes))
+      })
+      .catch(() => { /* defaults remain until the V0.6 migration is applied */ })
+    return () => { active = false }
+  }, [])
+
+  const downloadFile = (content: string, name: string, type: string) => {
+    const url = URL.createObjectURL(new Blob([content], { type }))
+    const link = document.createElement('a')
+    link.href = url; link.download = name; link.click(); URL.revokeObjectURL(url)
+  }
+
   const exportData = async () => {
     if (busy) return
     setBusy('export')
     try {
       const json = await exportAllDataJson()
-      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }))
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `StudyBloom-${todayDateKey()}.json`
-      link.click()
-      URL.revokeObjectURL(url)
+      downloadFile(json, `StudyBloom-${todayDateKey()}.json`, 'application/json')
       showToast('计划已导出')
     } catch (error) { showToast(getErrorMessage(error, '导出失败'), 'error') }
     finally { setBusy('') }
@@ -106,6 +123,22 @@ export function SettingsPage() {
     if (!myProfile) return
     const next = !myProfile.allowRequests
     runPrivacy('allow-requests', async () => { setMyProfile(await updateMyProfile({ allowRequests: next })) }, next ? '已开启接收好友申请' : '已停止接收好友申请')
+  }
+
+  const saveGoal = (event: FormEvent) => {
+    event.preventDefault()
+    const minutes = Number(goalMinutes)
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) return showToast('每日目标需要在 1-1440 分钟之间', 'error')
+    runPrivacy('daily-goal', () => saveStudyPreferences({ dailyGoalEnabled: goalEnabled, dailyGoalMinutes: minutes }), '每日学习目标已保存')
+  }
+
+  const exportCsv = (key: string, name: string, create: () => Promise<string>) => {
+    if (busy) return
+    setBusy(key)
+    void create()
+      .then((csv) => { downloadFile(csv, `${name}-${todayDateKey()}.csv`, 'text/csv;charset=utf-8'); showToast('CSV 已导出') })
+      .catch((error) => showToast(getErrorMessage(error, '导出失败'), 'error'))
+      .finally(() => setBusy(''))
   }
 
   return (
@@ -187,6 +220,19 @@ export function SettingsPage() {
         )}
       </section>
       <section className="surface mt-5 rounded-2xl p-5 sm:p-6">
+        <div className="flex items-start gap-3"><Target className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">每日学习目标</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">设置每天希望投入的学习时间，默认 120 分钟。关闭后仍会正常统计学习时长。</p></div></div>
+        <form className="mt-5 grid gap-4" onSubmit={saveGoal}>
+          <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-[var(--surface-soft)] p-3">
+            <div className="min-w-0"><span className="text-sm font-semibold">启用每日目标</span><p className="mt-0.5 text-xs text-[var(--muted)]">首页和统计页会显示今日完成率。</p></div>
+            <button type="button" role="switch" aria-checked={goalEnabled} className={`focus-ring relative h-8 w-14 shrink-0 rounded-full transition ${goalEnabled ? 'bg-[var(--accent-strong)]' : 'bg-[var(--line)]'}`} onClick={() => setGoalEnabled((value) => !value)}><span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition ${goalEnabled ? 'left-7' : 'left-1'}`} /></button>
+          </div>
+          <div className="flex min-w-0 items-end gap-3">
+            <div className="min-w-0 flex-1"><Input label="每日目标分钟数" name="daily-goal-minutes" type="number" inputMode="numeric" min={1} max={1440} value={goalMinutes} onChange={(event) => setGoalMinutes(event.target.value)} disabled={!goalEnabled} /></div>
+            <Button className="shrink-0" type="submit" loading={busy === 'daily-goal'}>保存目标</Button>
+          </div>
+        </form>
+      </section>
+      <section className="surface mt-5 rounded-2xl p-5 sm:p-6">
         <div className="flex items-start gap-3"><MapPin className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">学习地点</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">签到用于记录你真实在某个地方学习。位置只在你主动点击签到/签退时获取一次。</p></div></div>
         <StudyLocationSettings />
       </section>
@@ -194,6 +240,7 @@ export function SettingsPage() {
         <div className="flex items-start gap-3"><FileJson className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">备份与恢复</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">导出当前账号的全部计划，或从 StudyBloom JSON 备份中恢复。</p></div></div>
         <div className="mt-5 grid gap-3 sm:grid-cols-2"><Button variant="secondary" icon={<Download size={18} />} loading={busy === 'export'} onClick={exportData}>导出全部计划</Button><Button variant="secondary" icon={<Upload size={18} />} loading={busy === 'read'} onClick={() => fileInput.current?.click()}>选择导入文件</Button><input ref={fileInput} className="sr-only" type="file" accept="application/json,.json" onChange={selectFile} /></div>
         {preview && <div className="gentle-enter mt-5 rounded-xl bg-[var(--surface-soft)] p-4"><strong className="text-sm">文件校验通过</strong><p className="mt-1 text-sm text-[var(--muted)]">包含 {preview.tasks.length} 项任务，{preview.planDays.length} 条日期设置。</p><div className="mt-4 grid gap-2 sm:grid-cols-2"><Button variant="secondary" onClick={() => setPendingMode('append')}>追加导入</Button><Button onClick={() => setPendingMode('overwrite')}>覆盖同日期数据</Button></div></div>}
+        <div className="mt-5 border-t border-[var(--line)] pt-5"><h3 className="text-sm font-bold">表格数据导出</h3><p className="mt-1 text-xs leading-5 text-[var(--muted)]">签到 CSV 不包含经纬度，只导出地点名称、时间、距离和结果。</p><div className="mt-3 grid gap-2 sm:grid-cols-3"><Button variant="secondary" loading={busy === 'csv-sessions'} onClick={() => exportCsv('csv-sessions', 'StudyBloom-学习会话', exportStudySessionsCsv)}>学习会话 CSV</Button><Button variant="secondary" loading={busy === 'csv-daily'} onClick={() => exportCsv('csv-daily', 'StudyBloom-每日统计', exportDailyStudyCsv)}>每日统计 CSV</Button><Button variant="secondary" loading={busy === 'csv-attendance'} onClick={() => exportCsv('csv-attendance', 'StudyBloom-签到记录', exportAttendanceCsv)}>签到记录 CSV</Button></div></div>
       </section>
       <section className="surface mt-5 rounded-2xl p-5 sm:p-6"><div className="flex items-start gap-3"><Settings2 className="mt-0.5 text-[var(--accent-strong)]" size={21} /><div><h2 className="font-bold">关于 StudyBloom</h2><p className="mt-1 text-sm leading-6 text-[var(--muted)]">一个温暖、简单的学习计划日历。数据由 Supabase 安全同步。</p></div></div></section>
       <Button className="mt-5 w-full" variant="danger" icon={<LogOut size={18} />} loading={busy === 'logout'} onClick={logout}>退出登录</Button>

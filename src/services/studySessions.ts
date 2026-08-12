@@ -56,6 +56,8 @@ export const mapStudyPreferences = (row: PreferencesRow): StudyPreferences => ({
   roundsBeforeLongBreak: row.rounds_before_long_break,
   soundEnabled: row.sound_enabled,
   vibrationEnabled: row.vibration_enabled,
+  dailyGoalEnabled: row.daily_goal_enabled,
+  dailyGoalMinutes: row.daily_goal_minutes,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 })
@@ -69,6 +71,8 @@ export const defaultStudyPreferences = (userId: string): StudyPreferences => ({
   roundsBeforeLongBreak: POMODORO_LIMITS.roundsBeforeLongBreak.fallback,
   soundEnabled: false,
   vibrationEnabled: true,
+  dailyGoalEnabled: true,
+  dailyGoalMinutes: 120,
   createdAt: '',
   updatedAt: '',
 })
@@ -293,6 +297,8 @@ export async function saveStudyPreferences(update: StudyPreferencesUpdate): Prom
   if (update.roundsBeforeLongBreak !== undefined) patch.rounds_before_long_break = assertInRange(update.roundsBeforeLongBreak, POMODORO_LIMITS.roundsBeforeLongBreak, '长休息间隔')
   if (update.soundEnabled !== undefined) patch.sound_enabled = Boolean(update.soundEnabled)
   if (update.vibrationEnabled !== undefined) patch.vibration_enabled = Boolean(update.vibrationEnabled)
+  if (update.dailyGoalEnabled !== undefined) patch.daily_goal_enabled = Boolean(update.dailyGoalEnabled)
+  if (update.dailyGoalMinutes !== undefined) patch.daily_goal_minutes = assertInRange(update.dailyGoalMinutes, { min: 1, max: 1440 }, '每日学习目标')
   if (Object.keys(patch).length <= 1) throw new AppError('没有需要保存的学习偏好', 'VALIDATION')
   try {
     const { data, error } = await getSupabase()

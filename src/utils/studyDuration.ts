@@ -6,6 +6,7 @@ import type {
   StudySessionSegment,
   StudyTaskPoint,
   StudyTimeStatistics,
+  StudyTimeSlot,
 } from '../types';
 import { enumerateDateKeys, formatDateKey } from './date';
 
@@ -234,6 +235,42 @@ export function calculateStudyStatistics(
     byDay,
     byTask,
   };
+}
+
+/** Study time grouped into four local UTC+8 periods, split at every hour boundary. */
+export function calculateStudyTimeSlots(
+  sessions: StudySession[],
+  segments: StudySessionSegment[],
+  range: { startDate: DateKey; endDate: DateKey },
+  nowMs: number = Date.now(),
+): StudyTimeSlot[] {
+  const sessionIds = new Set(sessions.map((session) => session.id))
+  const seconds = { morning: 0, afternoon: 0, evening: 0, night: 0 }
+  for (const segment of segments) {
+    if (!sessionIds.has(segment.sessionId)) continue
+    let cursor = Date.parse(segment.startedAt)
+    const parsedEnd = segment.endedAt ? Date.parse(segment.endedAt) : nowMs
+    const end = Number.isFinite(parsedEnd) ? Math.max(cursor, parsedEnd) : cursor
+    if (!Number.isFinite(cursor)) continue
+    while (cursor < end) {
+      const shifted = cursor + LOCAL_OFFSET_MS
+      const hour = new Date(shifted).getUTCHours()
+      const nextHour = Math.floor(shifted / 3_600_000) * 3_600_000 + 3_600_000 - LOCAL_OFFSET_MS
+      const sliceEnd = Math.min(end, nextHour)
+      const date = formatDateKey(cursor)
+      if (date >= range.startDate && date <= range.endDate) {
+        const key = hour >= 5 && hour < 12 ? 'morning' : hour >= 12 && hour < 18 ? 'afternoon' : hour >= 18 ? 'evening' : 'night'
+        seconds[key] += Math.max(0, (sliceEnd - cursor) / 1000)
+      }
+      cursor = sliceEnd
+    }
+  }
+  return [
+    { key: 'morning', label: '清晨与上午', seconds: Math.floor(seconds.morning) },
+    { key: 'afternoon', label: '下午', seconds: Math.floor(seconds.afternoon) },
+    { key: 'evening', label: '晚上', seconds: Math.floor(seconds.evening) },
+    { key: 'night', label: '深夜', seconds: Math.floor(seconds.night) },
+  ]
 }
 
 /** Label for the global active-session bar; title is '' during breaks. */
