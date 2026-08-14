@@ -48,6 +48,7 @@ export function CompanionCard({ data }: { data: CompanionData }) {
     <section className="surface companion-card mt-3 rounded-2xl p-4 sm:p-5" aria-labelledby="companion-title">
       <Header />
       <p className="mt-3 text-sm text-[var(--muted)]">{typeof navigator !== 'undefined' && !navigator.onLine ? '当前处于离线状态，恢复网络后可以重新加载搭子动态。' : '暂时没取到搭子动态，不影响你的学习。'}</p>
+      <p className="mt-2 break-words rounded-lg bg-[var(--surface-soft)] px-3 py-2 text-xs leading-5 text-[var(--muted)]">原因：{data.error}</p>
       <Button variant="secondary" className="mt-3" icon={<RefreshCw size={16} />} onClick={() => data.reload()}>重新加载</Button>
     </section>
   )
