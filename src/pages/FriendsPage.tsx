@@ -135,9 +135,9 @@ export function FriendsPage() {
   return (
     <div className="gentle-enter mx-auto max-w-3xl min-w-0">
       <header className="mb-4 sm:mb-6">
-        <p className="flex items-center gap-2 text-sm font-semibold text-[var(--accent-strong)]"><Users size={16} />好友</p>
-        <h1 className="mt-1 truncate text-2xl font-bold tracking-[-0.03em] sm:text-4xl">一起学习的朋友</h1>
-        <p className="mt-1 text-xs text-[var(--muted)] sm:mt-2 sm:text-sm">通过 StudyBloom ID 精确添加好友，互相见证每天的坚持。</p>
+        <p className="eyebrow"><Users size={15} />好友</p>
+        <h1 className="page-title truncate">一起学习的朋友</h1>
+        <p className="page-desc">通过 StudyBloom ID 精确添加好友，互相见证每天的坚持。</p>
       </header>
 
       {data.error && <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl bg-[var(--rose-soft)] px-4 py-3 text-sm text-[var(--rose)]" role="alert"><span className="min-w-0 flex-1 break-words">{data.error}</span><Button variant="secondary" className="shrink-0" onClick={() => data.reload()}>重新加载</Button></div>}

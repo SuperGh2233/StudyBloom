@@ -164,7 +164,7 @@ export function SettingsPage() {
 
   return (
     <div className="gentle-enter mx-auto max-w-3xl">
-      <header className="mb-6"><p className="text-sm font-semibold text-[var(--accent-strong)]">应用设置</p><h1 className="mt-1 text-3xl font-bold tracking-[-0.03em] sm:text-4xl">整理你的 StudyBloom</h1></header>
+      <header className="mb-6"><p className="eyebrow">应用设置</p><h1 className="page-title">整理你的 StudyBloom</h1></header>
       <section className="surface rounded-2xl p-5 sm:p-6"><div className="flex items-center gap-4"><span className="grid h-12 w-12 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]"><UserRound size={22} /></span><div className="min-w-0"><h2 className="font-bold">当前账号</h2><p className="mt-0.5 truncate text-sm text-[var(--muted)]">{user?.email ?? '已登录用户'}</p></div></div></section>
 
       <section className="surface mt-5 rounded-2xl p-5 sm:p-6">

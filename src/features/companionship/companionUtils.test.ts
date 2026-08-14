@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { companionWeeklyText, sharedBloomDates, sharedBloomDatesWithConsent } from './companionUtils'
+import { companionWeeklyText, sharedBloomDates, sharedBloomDatesWithConsent, sharedBloomStreak } from './companionUtils'
 
 const day = (date: string, effectiveStudy: boolean) => ({ date, effectiveStudy, studiedMinutes: null, completedTasks: null, totalTasks: null })
 
@@ -19,5 +19,22 @@ describe('一起绽放计算', () => {
   it('周记不比较双方学习量', () => {
     expect(companionWeeklyText(4, 8)).toContain('你们有 4 天')
     expect(companionWeeklyText(0, 3)).not.toMatch(/落后|超过|更多/)
+  })
+
+  it('连续绽放从今天起数', () => {
+    expect(sharedBloomStreak(['2026-08-12', '2026-08-13', '2026-08-14'], '2026-08-14')).toBe(3)
+  })
+
+  it('今天未绽放时从昨天起数，记录不中断', () => {
+    expect(sharedBloomStreak(['2026-08-12', '2026-08-13'], '2026-08-14')).toBe(2)
+  })
+
+  it('昨天也空缺时记录归零', () => {
+    expect(sharedBloomStreak(['2026-08-12'], '2026-08-14')).toBe(0)
+  })
+
+  it('跨过月末与零散日期都正确', () => {
+    expect(sharedBloomStreak(['2026-07-31', '2026-08-01'], '2026-08-01')).toBe(2)
+    expect(sharedBloomStreak(['2026-08-10', '2026-08-12', '2026-08-13'], '2026-08-13')).toBe(2)
   })
 })

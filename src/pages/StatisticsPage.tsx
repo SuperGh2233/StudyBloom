@@ -78,17 +78,16 @@ export function StatisticsPage() {
   return (
     <div className="gentle-enter">
       <header className="mb-6">
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">学习统计</p>
-        <h1 className="mt-1 text-3xl font-bold tracking-[-0.03em] sm:text-4xl">看见坚持的痕迹</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">{format(new Date(), 'yyyy年 M月', { locale: zhCN })}的数据会在这里慢慢积累。</p>
-        <p className="mt-1 text-sm text-[var(--muted)]">每一段投入的学习时长，也会在这里留下痕迹。</p>
+        <p className="eyebrow">学习统计</p>
+        <h1 className="page-title">看见坚持的痕迹</h1>
+        <p className="page-desc">{format(new Date(), 'yyyy年 M月', { locale: zhCN })}的数据会在这里慢慢积累，每一段投入的学习时长都会留下痕迹。</p>
       </header>
 
       {studyView && <div className="mb-5"><DailyGoalCard enabled={studyView.goalEnabled} minutes={studyView.goalMinutes} studiedSeconds={todayStudySeconds} /></div>}
 
       <section className="surface rounded-2xl p-5 sm:p-6" aria-label="学习时长统计">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-bold">学习时长</h2>
+          <h2 className="section-title">学习时长</h2>
           <div role="group" aria-label="统计时间范围" className="grid w-full grid-cols-3 gap-1 rounded-xl bg-[var(--surface-soft)] p-1 sm:w-60">
             {RANGE_OPTIONS.map((option) => (
               <button key={option.kind} type="button" aria-pressed={kind === option.kind} onClick={() => setKind(option.kind)} className={`focus-ring min-h-11 min-w-0 rounded-lg text-sm font-semibold transition ${kind === option.kind ? 'bg-[var(--surface)] text-[var(--ink)] shadow-sm' : 'text-[var(--muted)] hover:text-[var(--ink)]'}`}>{option.label}</button>
@@ -122,7 +121,7 @@ export function StatisticsPage() {
               <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-[var(--line)]"><span className="bg-[var(--rose)] opacity-60" style={{ width: `${100 - focusShare}%` }} /><span className="bg-[var(--accent-strong)]" style={{ width: `${focusShare}%` }} /></div>
             </div>
 
-            <h3 className="mt-6 text-base font-bold">每日学习时长趋势</h3>
+            <h3 className="mt-6 text-sm font-bold tracking-wide text-[var(--muted)]">每日学习时长趋势</h3>
             <div className="mt-3 grid grid-cols-7 gap-1.5 sm:gap-3">
               {lastSevenStudy.map(({ date, data }) => {
                 const seconds = data?.seconds ?? 0
@@ -143,7 +142,7 @@ export function StatisticsPage() {
 
             {studyView.metrics.byTask.length > 0 && (
               <>
-                <h3 className="mt-6 text-base font-bold">按任务统计</h3>
+                <h3 className="mt-6 text-sm font-bold tracking-wide text-[var(--muted)]">按任务统计</h3>
                 <ul className="mt-3 grid gap-2">
                   {studyView.metrics.byTask.map((task) => (
                     <li key={task.taskTitle} className="flex min-w-0 items-center justify-between gap-3 rounded-xl bg-[var(--surface-soft)] px-4 py-3 text-sm">
@@ -156,7 +155,7 @@ export function StatisticsPage() {
             )}
 
             {favoriteSlot && favoriteSlot.seconds > 0 && (
-              <div className="mt-6"><h3 className="text-base font-bold">学习时间分布</h3><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{studyView.timeSlots.map((slot) => <div key={slot.key} className={`rounded-xl p-3 ${slot.key === favoriteSlot.key ? 'bg-[var(--accent-soft)]' : 'bg-[var(--surface-soft)]'}`}><strong className="block text-sm">{slot.label}</strong><span className="mt-1 block text-xs text-[var(--muted)]">{formatDurationHuman(slot.seconds)}</span></div>)}</div></div>
+              <div className="mt-6"><h3 className="text-sm font-bold tracking-wide text-[var(--muted)]">学习时间分布</h3><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">{studyView.timeSlots.map((slot) => <div key={slot.key} className={`rounded-xl p-3 ${slot.key === favoriteSlot.key ? 'bg-[var(--accent-soft)]' : 'bg-[var(--surface-soft)]'}`}><strong className="block text-sm">{slot.label}</strong><span className="mt-1 block text-xs text-[var(--muted)]">{formatDurationHuman(slot.seconds)}</span></div>)}</div></div>
             )}
           </>
         )}
@@ -164,7 +163,7 @@ export function StatisticsPage() {
 
       {studyView && (
         <section className="surface mt-5 rounded-2xl p-5 sm:p-6" aria-label="本周学习复盘">
-          <div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]"><Sparkles size={20} /></span><div><p className="text-xs font-semibold text-[var(--accent-strong)]">每周复盘</p><h2 className="mt-0.5 text-lg font-bold">这一周，学得怎么样</h2></div></div>
+          <div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]"><Sparkles size={20} /></span><div><p className="eyebrow">每周复盘</p><h2 className="section-title mt-0.5">这一周，学得怎么样</h2></div></div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Metric icon={Clock} label="本周总时长" value={formatDurationHuman(studyView.weeklyReview.totalSeconds)} />
             <Metric icon={studyView.weeklyReview.changePercent !== null && studyView.weeklyReview.changePercent < 0 ? TrendingDown : TrendingUp} label="相比上周" value={studyView.weeklyReview.changePercent === null ? '上周无记录' : `${studyView.weeklyReview.changePercent >= 0 ? '+' : ''}${studyView.weeklyReview.changePercent}%`} />
@@ -200,7 +199,7 @@ export function StatisticsPage() {
 
           <section className="mt-5 grid gap-5 lg:grid-cols-[.8fr_1.2fr]">
             <div className="surface rounded-2xl p-5 sm:p-6">
-              <h2 className="text-lg font-bold">连续完成</h2>
+              <h2 className="section-title">连续完成</h2>
               <div className="mt-5 grid grid-cols-2 gap-3">
                 <div className="rounded-xl bg-[var(--accent-soft)] p-4"><Flame className="text-[var(--accent-strong)]" size={22} /><strong className="mt-4 block text-3xl">{stats.currentStreak}</strong><span className="text-xs text-[var(--muted)]">当前连续天数</span></div>
                 <div className="rounded-xl bg-[var(--rose-soft)] p-4"><Trophy className="text-[var(--rose)]" size={22} /><strong className="mt-4 block text-3xl">{stats.longestStreak}</strong><span className="text-xs text-[var(--muted)]">最长连续天数</span></div>
@@ -208,7 +207,7 @@ export function StatisticsPage() {
               <p className="mt-4 text-xs leading-5 text-[var(--muted)]">当天至少有一项任务且全部完成，记为完成。休息日不增加天数，也不会中断连续记录。</p>
             </div>
             <div className="surface rounded-2xl p-5 sm:p-6">
-              <h2 className="text-lg font-bold">最近七天</h2>
+              <h2 className="section-title">最近七天</h2>
               <div className="mt-5 grid grid-cols-7 gap-1.5 sm:gap-3">
                 {lastSeven.map(({ date, data }) => {
                   const rate = data?.taskCount ? Math.round((data.completedTaskCount / data.taskCount) * 100) : 0
@@ -224,5 +223,11 @@ export function StatisticsPage() {
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof ListChecks; label: string; value: string | number }) {
-  return <div className="min-w-0 rounded-xl bg-[var(--surface-soft)] p-4"><Icon size={19} className="text-[var(--accent-strong)]" /><strong className="mt-3 block text-2xl leading-snug">{value}</strong><span className="text-xs text-[var(--muted)]">{label}</span></div>
+  return (
+    <div className="min-w-0 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 shadow-[var(--shadow-sm)] sm:p-4">
+      <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent-strong)]"><Icon size={16} /></span>
+      <strong className="mt-3 block truncate text-xl font-bold leading-snug tracking-tight" title={String(value)}>{value}</strong>
+      <span className="mt-0.5 block text-xs text-[var(--muted)]">{label}</span>
+    </div>
+  )
 }

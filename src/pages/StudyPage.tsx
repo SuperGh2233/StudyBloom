@@ -288,22 +288,22 @@ export function StudyPage() {
   return (
     <div className="gentle-enter mx-auto max-w-5xl">
       <header className="mb-5">
-        <p className="text-sm font-semibold text-[var(--accent-strong)]">学习</p>
-        <h1 className="mt-1 text-3xl font-bold tracking-[-0.03em] sm:text-4xl">专注一会儿</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">{format(new Date(), 'M月d日 EEEE', { locale: zhCN })} · 慢慢来，比较快。</p>
+        <p className="eyebrow">学习</p>
+        <h1 className="page-title">专注一会儿</h1>
+        <p className="page-desc">{format(new Date(), 'M月d日 EEEE', { locale: zhCN })} · 慢慢来，比较快。</p>
       </header>
 
-      <section className="surface rounded-2xl p-5" aria-label="今日学习概览">
+      <section className="surface rounded-2xl p-4 sm:p-5" aria-label="今日学习概览">
         <div className="grid grid-cols-2 gap-3">
-          <div className="min-w-0 rounded-xl bg-[var(--accent-soft)] p-4">
-            <Clock size={19} className="text-[var(--accent-strong)]" aria-hidden="true" />
-            <strong className="mt-3 block text-xl leading-7">{formatDurationHuman(todayStats.totalSeconds)}</strong>
-            <span className="text-xs text-[var(--muted)]">今日学习时长</span>
+          <div className="min-w-0 rounded-xl border border-[var(--line)] bg-[var(--accent-soft)] p-4">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--surface)] text-[var(--accent-strong)] shadow-[var(--shadow-sm)]"><Clock size={16} aria-hidden="true" /></span>
+            <strong className="mt-3 block text-xl font-bold leading-7 tracking-tight">{formatDurationHuman(todayStats.totalSeconds)}</strong>
+            <span className="mt-0.5 block text-xs text-[var(--muted)]">今日学习时长</span>
           </div>
-          <div className="min-w-0 rounded-xl bg-[var(--rose-soft)] p-4">
-            <Hourglass size={19} className="text-[var(--rose)]" aria-hidden="true" />
-            <strong className="mt-3 block text-xl leading-7">{todayStats.completedPomodoroRounds}</strong>
-            <span className="text-xs text-[var(--muted)]">完成番茄轮数</span>
+          <div className="min-w-0 rounded-xl border border-[var(--line)] bg-[var(--rose-soft)] p-4">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--surface)] text-[var(--rose)] shadow-[var(--shadow-sm)]"><Hourglass size={16} aria-hidden="true" /></span>
+            <strong className="mt-3 block text-xl font-bold leading-7 tracking-tight">{todayStats.completedPomodoroRounds}</strong>
+            <span className="mt-0.5 block text-xs text-[var(--muted)]">完成番茄轮数</span>
           </div>
         </div>
       </section>

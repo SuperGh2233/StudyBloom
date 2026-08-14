@@ -79,13 +79,13 @@ export function CalendarPage() {
       <section className="mt-5 min-w-0" aria-labelledby="calendar-month-title">
         <header className="mb-3 grid min-w-0 gap-2.5 sm:mb-5 sm:gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
           <div className="min-w-0">
-            <p className="mb-0.5 flex items-center gap-2 text-xs font-semibold text-[var(--accent-strong)] sm:mb-1 sm:text-sm"><Leaf size={16} />本月计划</p>
-            <h1 id="calendar-month-title" className="truncate text-[22px] font-bold tracking-[-0.03em] sm:text-4xl">{format(month, 'yyyy年M月', { locale: zhCN })}</h1>
-            <p className="mt-1 text-xs text-[var(--muted)] sm:mt-1.5 sm:text-sm">完成 {completed}/{data.tasks.length} 项，本月完成率 {rate}%</p>
+            <p className="eyebrow"><Leaf size={15} />本月计划</p>
+            <h1 id="calendar-month-title" className="page-title truncate">{format(month, 'yyyy年M月', { locale: zhCN })}</h1>
+            <p className="page-desc">完成 {completed}/{data.tasks.length} 项，本月完成率 {rate}%</p>
           </div>
-          <div className="grid min-w-0 grid-cols-[40px_40px_minmax(0,1fr)] gap-1.5 sm:flex sm:gap-2">
-            <button className="focus-ring grid h-11 w-10 place-items-center rounded-xl border border-[var(--line)] bg-[var(--surface)] sm:w-11" onClick={() => setMonth((value) => addMonths(value, -1))} aria-label="上一个月"><ChevronLeft size={20} /></button>
-            <button className="focus-ring grid h-11 w-10 place-items-center rounded-xl border border-[var(--line)] bg-[var(--surface)] sm:w-11" onClick={() => setMonth((value) => addMonths(value, 1))} aria-label="下一个月"><ChevronRight size={20} /></button>
+          <div className="grid min-w-0 grid-cols-[44px_44px_minmax(0,1fr)] gap-1.5 sm:flex sm:gap-2">
+            <button className="focus-ring grid h-11 w-11 place-items-center rounded-xl border border-[var(--line)] bg-[var(--surface)]" onClick={() => setMonth((value) => addMonths(value, -1))} aria-label="上一个月"><ChevronLeft size={20} /></button>
+            <button className="focus-ring grid h-11 w-11 place-items-center rounded-xl border border-[var(--line)] bg-[var(--surface)]" onClick={() => setMonth((value) => addMonths(value, 1))} aria-label="下一个月"><ChevronRight size={20} /></button>
             <Button variant="secondary" className="min-w-0 whitespace-nowrap px-2 text-xs sm:px-4 sm:text-sm" onClick={goToday}>回到今天</Button>
           </div>
         </header>

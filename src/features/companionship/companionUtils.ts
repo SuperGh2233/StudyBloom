@@ -1,4 +1,5 @@
 import type { CompanionDaySummary, CompanionShareLevel, CompanionWeeklySummary, DateKey } from '../../types'
+import { addDays } from '../../utils/date'
 
 export const EFFECTIVE_STUDY_SECONDS = 10 * 60
 
@@ -15,6 +16,18 @@ export function sharedBloomDatesWithConsent(
 ): Set<DateKey> {
   if (ownLevel === 'none' || companionLevel === 'none') return new Set()
   return sharedBloomDates(ownDays, companionDays)
+}
+
+/** 连续共同绽放天数：今天已绽放则从今天起数，否则从昨天起数（今天仍有机会延续记录）。 */
+export function sharedBloomStreak(dates: Iterable<DateKey>, today: DateKey): number {
+  const set = dates instanceof Set ? dates : new Set(dates)
+  let cursor = set.has(today) ? today : addDays(today, -1)
+  let streak = 0
+  while (set.has(cursor)) {
+    streak += 1
+    cursor = addDays(cursor, -1)
+  }
+  return streak
 }
 
 export function companionWeeklyText(weekBloomDays: number, totalBloomDays: number): string {

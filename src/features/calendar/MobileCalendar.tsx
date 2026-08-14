@@ -32,11 +32,11 @@ export function MobileCalendarView({ month, tasksByDate, planDaysByDate, studySu
 
   return (
     <div className="min-w-0">
-      <div className="w-full min-w-0 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+      <div className="surface w-full min-w-0 overflow-hidden rounded-2xl">
         <div className="calendar-grid grid w-full min-w-0 border-b border-[var(--line)] bg-[var(--surface-soft)]">
-          {weekDays.map((day, index) => <div key={day} className={`min-w-0 py-2 text-center text-xs font-semibold ${index > 4 ? 'text-[var(--rose)]' : 'text-[var(--muted)]'}`}>{day}</div>)}
+          {weekDays.map((day, index) => <div key={day} className={`min-w-0 py-2 text-center text-[11px] font-bold tracking-widest ${index > 4 ? 'text-[var(--rose)]' : 'text-[var(--muted)]'}`}>{day}</div>)}
         </div>
-        <div className="calendar-grid grid w-full min-w-0">
+        <div className="calendar-grid grid w-full min-w-0 gap-1 p-1.5">
           {days.map((date) => (
             <DateCell
               key={keyForDate(date)}
@@ -70,7 +70,7 @@ export function DateCell({ date, month, tasks, rest, selected, onSelect }: { dat
       onClick={() => onSelect(key)}
       aria-label={`${format(date, 'M月d日 EEEE', { locale: zhCN })}，${statusLabel}`}
       aria-pressed={selected}
-      className={`focus-ring flex h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden p-0.5 transition hover:bg-[var(--surface-soft)] ${selected ? 'bg-[var(--accent-soft)] ring-1 ring-inset ring-[var(--accent)]' : ''} ${muted ? 'opacity-40' : ''}`}
+      className={`focus-ring flex h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 overflow-hidden rounded-xl p-0.5 transition hover:bg-[var(--surface-soft)] active:scale-[0.96] ${selected ? 'bg-[var(--accent-soft)] shadow-[inset_0_0_0_1.5px_var(--accent)]' : ''} ${muted ? 'opacity-40' : ''}`}
     >
       <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-lg text-[14px] font-bold ${isToday(date) ? 'bg-[var(--accent-strong)] text-white shadow-sm' : weekend ? 'text-[var(--rose)]' : 'text-[var(--ink)]'}`}>{date.getDate()}</span>
       <span className="grid h-3.5 min-w-0 place-items-center" aria-hidden="true">

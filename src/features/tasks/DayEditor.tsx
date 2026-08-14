@@ -144,17 +144,18 @@ export function DayEditor(props: DayEditorProps) {
                 <div className="flex min-w-0 items-center gap-2">
                   <button className={`focus-ring grid h-11 w-11 shrink-0 place-items-center rounded-xl border transition ${task.completed ? 'border-[var(--accent-strong)] bg-[var(--accent-soft)] text-[var(--accent-strong)]' : 'border-[var(--line)] text-[var(--muted)]'}`} onClick={() => run(`toggle-${task.id}`, () => props.onToggle(task.id, !task.completed))} aria-pressed={task.completed} aria-label={task.completed ? `取消完成 ${task.title}` : `完成 ${task.title}`}>{task.completed ? <SquareCheck size={20} strokeWidth={2.5} /> : <Square size={20} strokeWidth={1.8} />}</button>
                   <input
-                    className={`focus-ring min-w-0 flex-1 rounded-lg bg-transparent px-1 py-2 text-base sm:px-2 sm:text-sm ${task.completed ? 'text-[var(--muted)] line-through' : ''}`}
+                    className={`focus-ring min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 py-2 text-base transition hover:border-[var(--line)] hover:bg-[var(--surface-soft)] focus:border-[var(--accent)] focus:bg-[var(--surface)] sm:text-sm ${task.completed ? 'text-[var(--muted)] line-through' : ''}`}
                     defaultValue={task.title}
                     maxLength={100}
                     aria-label="任务名称"
                     onBlur={(event) => { const value = event.target.value.trim(); if (value && value !== task.title) void run(`edit-${task.id}`, () => props.onUpdate(task.id, { title: value }), '任务已更新'); else event.target.value = task.title }}
                   />
-                  <div className="flex shrink-0">
-                    {isToday && <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--accent-strong)] sm:w-9" onClick={() => navigate(`/study?task=${task.id}`)} aria-label={`开始学习 ${task.title}`}><Timer size={17} /></button>}
-                    <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25 sm:w-9" disabled={index === 0 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, -1))} aria-label="上移任务"><ArrowUp size={17} /></button>
-                    <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--muted)] disabled:opacity-25 sm:w-9" disabled={index === tasks.length - 1 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, 1))} aria-label="下移任务"><ArrowDown size={17} /></button>
-                    <button className="focus-ring grid h-10 w-8 place-items-center rounded-lg text-[var(--rose)] sm:w-9" onClick={() => setDeleteId(task.id)} aria-label={`删除 ${task.title}`}><Trash2 size={17} /></button>
+                  <div className="flex shrink-0 items-center">
+                    {isToday && <button className="focus-ring grid h-10 w-10 place-items-center rounded-lg text-[var(--accent-strong)] transition hover:bg-[var(--accent-soft)]" onClick={() => navigate(`/study?task=${task.id}`)} aria-label={`开始学习 ${task.title}`}><Timer size={17} /></button>}
+                    <button className="focus-ring grid h-10 w-10 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:opacity-25" disabled={index === 0 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, -1))} aria-label="上移任务"><ArrowUp size={17} /></button>
+                    <button className="focus-ring grid h-10 w-10 place-items-center rounded-lg text-[var(--muted)] transition hover:bg-[var(--surface-soft)] disabled:opacity-25" disabled={index === tasks.length - 1 || Boolean(busy)} onClick={() => run(`move-${task.id}`, () => props.onMove(date, task.id, 1))} aria-label="下移任务"><ArrowDown size={17} /></button>
+                    <span className="mx-1 h-5 w-px shrink-0 bg-[var(--line)]" aria-hidden="true" />
+                    <button className="focus-ring grid h-10 w-10 place-items-center rounded-lg text-[var(--rose)] transition hover:bg-[var(--rose-soft)]" onClick={() => setDeleteId(task.id)} aria-label={`删除 ${task.title}`}><Trash2 size={17} /></button>
                   </div>
                 </div>
                 <div className="mt-1 grid min-w-0 gap-2 pl-[52px] sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-end">
