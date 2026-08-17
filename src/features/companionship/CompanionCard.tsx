@@ -102,15 +102,32 @@ export function CompanionCard({ data }: { data: CompanionData }) {
       </div>
 
       <div className="mt-4 min-w-0">
-        {sharedToday ? (
-          <p className="text-base font-bold text-[var(--accent-strong)]">你们今天都认真学习过，一起绽放了一天。</p>
-        ) : state.companionShareLevel === 'none' ? (
+        {state.companionShareLevel === 'none' ? (
+            <><p className="text-sm font-semibold">学习记录由 {state.primaryCompanionName} 自己掌握</p><p className="mt-1 text-xs leading-5 text-[var(--muted)]">分享由每个人自己决定。你仍然可以送出一朵表示陪伴的小花。</p></>
+          ) : (
+            <>
+              {sharedToday && <p className="text-base font-bold text-[var(--accent-strong)]">你们今天都认真学习过，一起绽放了一天。</p>}
+              {state.companionShareLevel === 'summary' && state.companionToday && (
+                <p className="mt-1 text-xs text-[var(--muted)]">有效学习 {state.companionToday.studiedMinutes ?? 0} 分钟，完成 {state.companionToday.completedTasks ?? 0}/{state.companionToday.totalTasks ?? 0} 项任务</p>
+              )}
+              {state.companionShareLevel === 'bloom_only' && state.companionToday?.effectiveStudy && (
+                <p className="text-sm font-semibold">{state.primaryCompanionName} 今天也为目标留出了一段时间。</p>
+              )}
+              {state.companionShareLevel !== 'summary' && !state.companionToday?.effectiveStudy && (
+                <p className="text-sm text-[var(--muted)]">今天暂时没有可分享的记录。今天可以慢慢来，也可以安心休息。</p>
+              )}
+            </>
+          )}
+          {/* old implementation below is commented out
           <><p className="text-sm font-semibold">学习记录由 {state.primaryCompanionName} 自己掌握</p><p className="mt-1 text-xs leading-5 text-[var(--muted)]">分享由每个人自己决定。你仍然可以送出一朵表示陪伴的小花。</p></>
-        ) : state.companionToday?.effectiveStudy ? (
+        ) : (
+          <><p className="text-sm font-semibold">学习记录由 {state.primaryCompanionName} 自己掌握</p><p className="mt-1 text-xs leading-5 text-[var(--muted)]">分享由每个人自己决定。你仍然可以送出一朵表示陪伴的小花。</p></>
+        {sharedToday && <p className="text-base font-bold text-[var(--accent-strong)]">你们今天都认真学习过，一起绽放了一天。</p>}
           <><p className="text-sm font-semibold">{state.primaryCompanionName} 今天也为目标留出了一段时间。</p>{state.companionShareLevel === 'summary' && <p className="mt-1 text-xs text-[var(--muted)]">有效学习 {state.companionToday.studiedMinutes ?? 0} 分钟，完成 {state.companionToday.completedTasks ?? 0}/{state.companionToday.totalTasks ?? 0} 项任务</p>}</>
         ) : (
           <p className="text-sm text-[var(--muted)]">今天暂时没有可分享的记录。今天可以慢慢来，也可以安心休息。</p>
         )}
+          */}
       </div>
 
       {state.ownShareLevel === 'none' && <p className="mt-3 rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-xs leading-5 text-[var(--muted)]">你尚未向 {state.primaryCompanionName} 分享学习状态。开启“仅共同绽放”也不会暴露时长和任务。</p>}
