@@ -1,7 +1,7 @@
 import { format, parseISO, subDays } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { Flower2, HeartHandshake, RefreshCw, Settings2, Sprout, UserPlus } from 'lucide-react'
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../../components/Button'
 import { useToast } from '../../components/ToastProvider'
@@ -27,6 +27,19 @@ export function CompanionCard({ data }: { data: CompanionData }) {
   const [burstKey, setBurstKey] = useState(0)
   const [sending, setSending] = useState(false)
   const weekly = useCompanionWeekly(data.data?.primaryCompanionId ?? null)
+
+  const receivedFlowerCompanionId = data.data?.receivedToday ? data.data.primaryCompanionId : null
+  const receivedFlowerCompanionName = data.data?.receivedToday ? data.data.primaryCompanionName : ''
+  const receivedFlowerDate = data.data?.todayDate ?? ''
+  useEffect(() => {
+    if (!receivedFlowerCompanionId || !receivedFlowerDate) return
+    try {
+      const key = `studybloom:companion-flower-toast:${receivedFlowerCompanionId}:${receivedFlowerDate}`
+      if (window.sessionStorage.getItem(key)) return
+      window.sessionStorage.setItem(key, '1')
+    } catch { /* 隐私模式或存储不可用时仍提示，不阻塞首页 */ }
+    showToast(`${receivedFlowerCompanionName || '学习搭子'} 今天送来一朵花`)
+  }, [receivedFlowerCompanionId, receivedFlowerCompanionName, receivedFlowerDate, showToast])
 
   const sendFlower = async () => {
     if (sending) return
