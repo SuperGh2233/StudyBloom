@@ -10,6 +10,7 @@ export function useMonthPlans(monthDate: Date) {
   const monthKey = format(monthDate, 'yyyy-MM')
   const [tasks, setTasks] = useState<Task[]>([])
   const [planDays, setPlanDays] = useState<PlanDay[]>([])
+  const [loadedMonthKey, setLoadedMonthKey] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -18,7 +19,7 @@ export function useMonthPlans(monthDate: Date) {
     setError('')
     try {
       const [nextTasks, nextPlanDays] = await Promise.all([taskService.listTasksByMonth(monthKey), planDayService.listPlanDaysByMonth(monthKey)])
-      setTasks(nextTasks); setPlanDays(nextPlanDays)
+      setTasks(nextTasks); setPlanDays(nextPlanDays); setLoadedMonthKey(monthKey)
     } catch (reason) { setError(getErrorMessage(reason, '本月计划加载失败')) }
     finally { setLoading(false) }
   }, [monthKey])
@@ -77,7 +78,15 @@ export function useMonthPlans(monthDate: Date) {
     setPlanDays((items) => [...items.filter((item) => item.planDate !== planDate), saved]); return saved
   }, [planDaysByDate])
 
-  const copyDay = useCallback(async (sourceDate: string, targetDate: string, mode: CopyMode) => { await copyTasks(sourceDate, targetDate, mode); await load(true) }, [load])
+  const copyDay = useCallback(async (sourceDate: string, targetDate: string, mode: CopyMode) => {
+    const inCurrentMonth = (date: string) => date.startsWith(`${monthKey}-`)
+    const canUseMonthCache = loadedMonthKey === monthKey
+    const copied = await copyTasks(sourceDate, targetDate, mode, {
+      sourceTasks: canUseMonthCache && inCurrentMonth(sourceDate) ? tasksByDate.get(sourceDate) ?? [] : undefined,
+      targetTasks: canUseMonthCache && inCurrentMonth(targetDate) ? tasksByDate.get(targetDate) ?? [] : undefined,
+    })
+    if (inCurrentMonth(targetDate)) setTasks((items) => [...items.filter((task) => task.planDate !== targetDate), ...copied])
+  }, [loadedMonthKey, monthKey, tasksByDate])
 
   return { monthKey, tasks, planDays, tasksByDate, planDaysByDate, loading, error, reload: load, addTask, updateTask, toggleTask, removeTask, moveTask, savePlanDay, copyDay }
 }

@@ -9,7 +9,6 @@ import { useToast } from '../components/ToastProvider'
 import { AttendanceCard } from '../features/study/AttendanceCard'
 import { PomodoroTimer } from '../features/study/PomodoroTimer'
 import { StudyRecords } from '../features/study/StudyRecords'
-import { StudySummarySheet } from '../features/study/StudySummarySheet'
 import { StudyTimer } from '../features/study/StudyTimer'
 import { TaskPicker } from '../features/study/TaskPicker'
 import { useAttendance } from '../hooks/useAttendance'
@@ -21,10 +20,8 @@ import {
   fetchStudyDataForRange,
   getStudyPreferences,
   saveStudyPreferences,
-  saveStudySessionReflection,
   type StartSessionInput,
 } from '../services/studySessions'
-import { setTaskCompleted } from '../services/tasks'
 import type {
   AttendanceRecord,
   StudyMode,
@@ -35,7 +32,7 @@ import type {
 } from '../types'
 import { todayDateKey } from '../utils/date'
 import { getErrorMessage } from '../utils/errorMessage'
-import { calculateStudyStatistics, formatDurationHuman, sessionElapsedSeconds } from '../utils/studyDuration'
+import { calculateStudyStatistics, formatDurationHuman } from '../utils/studyDuration'
 
 /** 880Hz / 0.15s / gain 0.08 soft beep; AudioContext is created lazily per call. */
 function playPhaseEndBeep() {
@@ -84,7 +81,6 @@ export function StudyPage() {
   const [mode, setMode] = useState<StudyMode>('free')
   const [taskId, setTaskId] = useState<string | null>(() => searchParams.get('task'))
   const [busy, setBusy] = useState('')
-  const [summary, setSummary] = useState<{ session: StudySession; sessionSeconds: number; todaySeconds: number } | null>(null)
   const [recordsVersion, setRecordsVersion] = useState(0)
   const [todayData, setTodayData] = useState<{ sessions: StudySession[]; segments: StudySessionSegment[] }>({ sessions: [], segments: [] })
   const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord[]>([])
@@ -179,37 +175,11 @@ export function StudyPage() {
   const handleStart = (input: StartSessionInput) => void run('start', async () => { await study.start(input); bump() }, '学习已开始')
   const handlePause = () => void run('pause', async () => { await study.pause(); bump() })
   const handleResume = () => void run('resume', async () => { await study.resume(); bump() })
-  const handleFinish = () => void run('finish', async () => {
-    const segments = study.segments
-    const now = study.nowMs
-    const final = await study.finish()
-    bump()
-    if (!final) return
-    const today = todayDateKey()
-    const currentStats = calculateStudyStatistics(
-      [...todayData.sessions.filter((session) => session.id !== final.id), final],
-      segments,
-      { startDate: today, endDate: today },
-      now,
-    )
-    setSummary({
-      session: final,
-      sessionSeconds: sessionElapsedSeconds(final, segments, now),
-      todaySeconds: currentStats.totalSeconds,
-    })
-  })
+  const handleFinish = () => void run('finish', async () => { await study.finish(); bump() }, '学习已结束')
   const handleStartBreak = (phase: 'short_break' | 'long_break') => void run('break', async () => { await study.startBreak(phase); bump() })
   const handleSkipBreak = () => void run('skip', async () => { await study.skipBreak(); bump() })
   const handleNextFocus = () => void run('next', async () => { await study.startNextFocus(); bump() })
   const handleEndRound = () => void run('round', async () => { await study.endRound(); bump() })
-
-  const saveSummary = (reflection: string, completeTask: boolean) => void run('summary', async () => {
-    if (!summary) return
-    if (reflection !== summary.session.reflection) await saveStudySessionReflection(summary.session.id, reflection)
-    if (completeTask && summary.session.taskId) await setTaskCompleted(summary.session.taskId, true)
-    setSummary(null)
-    bump()
-  }, completeTask ? '学习总结已保存，任务也完成啦' : '学习总结已保存')
 
   const selectMode = (nextMode: StudyMode) => {
     if (mode === nextMode) return
@@ -351,15 +321,6 @@ export function StudyPage() {
           />
         </div>
       </div>
-
-      <StudySummarySheet
-        session={summary?.session ?? null}
-        sessionSeconds={summary?.sessionSeconds ?? 0}
-        todaySeconds={summary?.todaySeconds ?? 0}
-        saving={busy === 'summary'}
-        onClose={() => setSummary(null)}
-        onSave={saveSummary}
-      />
     </div>
   )
 }
