@@ -1,68 +1,101 @@
 # StudyBloom
 
-StudyBloom 是一个温暖、简洁的个人学习计划日历，让每天的努力慢慢开花。用户可以记录每日任务、完成任务、查看月度统计、设置学习地点签到，并用自由计时和番茄专注记录真实的学习时长——所有数据在不同设备间通过 Supabase 同步。
+<p align="center">
+  <strong>让每天的学习计划，慢慢开花。</strong>
+</p>
 
-## 功能
+<p align="center">
+  <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white">
+  <img alt="Supabase" src="https://img.shields.io/badge/Backend-Supabase-3FCF8E?logo=supabase&logoColor=white">
+  <img alt="PWA" src="https://img.shields.io/badge/App-PWA-5A0FC8">
+</p>
 
-- 邮箱注册、登录、退出、忘记密码和重置密码
-- 周一到周日的完整月历、月份切换和返回今天
-- 每日任务新增、编辑、删除、完成状态和排序
-- 任务预计学习时长、实际累计时长、目标进度和任务学习明细
-- 休息日、每日备注、复制前一天计划和复制到指定日期
-- 月度完成率、连续完成和近七天统计
-- 数据 JSON 导入导出（备份版本 2，兼容版本 1 导入）
-- 好友系统：StudyBloom ID 精确添加、申请接受/拒绝/取消、删除与拉黑
-- 好友日历：所有者逐个授权后，好友可只读查看对方月历和完成情况
-- 学习模块：学习地点设置、地点签到/签退、自由计时、番茄专注、学习记录与统计
-- 每日学习目标、学习时长趋势、学习模式占比、时间段分布和每周复盘
-- 自定义考研目标日期倒计时，以及仅自己可见的好友备注
-- 首页今日学习入口、两步首次引导和渐进式功能推荐
-- 好友邀请链接、系统分享面板与登录后邀请恢复
-- 固定首页搭子、学习者/陪伴者两种使用方式和逐人可撤销的分享契约
-- “一起绽放”：双方同日完成至少 10 分钟有效学习后生成共同记录，不排名、不催促
-- 每天一朵花、最近七天共同记录和基于现有数据生成的无比较双人周记
-- 学习会话、每日学习统计与隐私处理后的签到记录 CSV 导出
-- Supabase Auth、PostgreSQL 和 RLS 数据隔离
-- iPhone 添加到主屏幕的 PWA 支持
-- 静态资源预缓存、离线状态提示和版本更新提示
+StudyBloom 是一个面向个人与学习搭子的学习计划日历。它把每日任务、专注计时、学习记录、目标统计和好友陪伴整合在一起，并通过 Supabase 在设备间同步数据。
 
-## 学习模块
+## 功能一览
 
-- **学习地点**：在「设置 → 学习地点」中添加地点（名称 + 签到半径 100–1000 米），到达后点「使用当前位置」确定中心坐标。第一版不接入地图 SDK；历史地点停用而不删除。
-- **地点签到/签退**：只在主动点击签到/签退时获取一次浏览器定位（`navigator.geolocation`，精度需 ≤150 米）；距离由数据库用 Haversine 复核，超出半径会给出中文提示。忘记签退时可用「异常结束本次记录」（二次确认，不计有效在场时长）。
-- **学习模式**：自由计时（开始/暂停/继续/结束）与番茄专注（可配置专注 15–90 分钟、短休息 3–30、长休息 10–60、长休息间隔 2–8 轮，偏好跨设备同步）。默认关联今日第一项未完成任务，也可选择自由学习；最近选择的模式会跨设备保留。学习时长以数据库计时片段为准，刷新、锁屏、切后台都能恢复。V0.4.1 起核心记录只允许通过数据库 RPC 修改，番茄休息类型也由数据库决定。
-- **V0.5.1 学习闭环**：任务可设置 30/45/60/90/120 分钟快捷目标或自定义分钟数，并显示累计实际时长与进度。结束学习会直接保存本次记录并返回学习页；任务详情展示累计时长、次数、最近学习时间和近期记录，旧版本已有的学习感受仍可查看和导出。
-- **V0.6.0 统计与复盘**：可设置或关闭每日学习目标（默认 120 分钟），首页和统计页展示今日时长与目标完成率。统计补充每日时长、自由/番茄占比、任务投入、每日番茄、有效签到、目标达成和常用学习时段，并通过现有数据生成不依赖 AI 的每周复盘。
-- **V0.7.0 倒计时与好友备注**：设置一个可关闭的考研目标日期，首页展示剩余天数；可以为已接受的好友保存 30 字以内的私人备注，好友本人不可见，删除或拉黑好友时自动清理。
-- **V0.8.0 首次体验与学习闭环**：首页优先展示今日下一项任务或活动中的学习会话，一次点击即可复用学习偏好并进入计时。全新用户通过两步抽屉完成首项任务和首次专注；每日目标、学习地点和学习搭子在满足条件后以可关闭的小卡片渐进推荐。
-- **V0.9.0 一起绽放**：从已接受好友中选择一位首页搭子，可选择“一起学习”或“主要陪伴”。学习数据默认不分享；可单独授权“仅共同绽放”或“今日概要”。原始会话、任务标题、备注、定位和精确时间始终不会通过搭子概要开放。双方同日完成至少 10 分钟有效学习后形成共同绽放日，还可以每天互送一次无文字小花，并查看不比较双方数据的双人周记。
-- **V0.9.1 加载优化**：好友和搭子数据在登录后的应用壳层共享并按需加载；首页搭子卡使用一次隐私聚合请求，页面切换复用三分钟内的内存缓存，送花等操作直接更新本地状态。
-- **隐私**：精确位置仅本人可见，不对好友开放、不进好友日历、不持续采集、不发送给 Supabase 以外的第三方。浏览器定位可被伪造，本功能不是防作弊考勤系统。
-- **数据导出**：设置页可分别导出学习会话、每日学习统计和签到记录 CSV；签到 CSV 仅包含地点名称、时间、距离与结果，不包含经纬度。
+- **学习日历：** 月历视图、每日任务、排序、备注、休息日与计划复制。
+- **学习目标：** 任务预计时长、实际累计时长和完成进度。
+- **专注计时：** 自由计时与可配置番茄钟，支持暂停、继续和跨页面恢复。
+- **学习地点：** 主动签到/签退，记录地点和有效学习时段。
+- **统计复盘：** 每日目标、连续学习、学习模式分布、趋势和每周回顾。
+- **好友系统：** 通过 StudyBloom ID 添加好友，接受邀请后可按所有者授权只读查看日历。
+- **一起绽放：** 选择学习搭子，双方达到有效学习条件后生成共同记录；不做排行榜、不比较个人数据。
+- **隐私分享：** 学习数据默认不分享，搭子概要按人授权并可撤销。
+- **数据备份：** 支持 JSON 备份及学习会话、每日统计和隐私处理后的签到 CSV 导出。
+- **PWA：** 支持添加到 iPhone / Android 主屏幕，提供静态资源预缓存、离线状态提示和版本更新提示。
+
+## 学习闭环
+
+1. 在月历中规划每日任务。
+2. 从今日入口开始自由计时或番茄专注。
+3. 将学习片段累计到任务实际时长和每日目标。
+4. 通过统计页回顾趋势，并按自己的意愿与好友分享有限的学习摘要。
+
+## 技术架构
+
+```mermaid
+flowchart TD
+  U[Browser / PWA] --> APP[React + TypeScript]
+  APP --> AUTH[Supabase Auth]
+  APP --> DB[PostgreSQL + RLS]
+  APP --> RPC[Database RPC]
+  DB --> DATA[Plans / Tasks / Study Records]
+  RPC --> TIMER[Atomic Study Session Transitions]
+  RPC --> PRIVACY[Friend Shares / Companion Summaries]
+```
 
 ## 技术栈
 
-React、Vite、TypeScript、Tailwind CSS、date-fns、lucide-react、Supabase JS、vite-plugin-pwa、Vitest。
+- React、TypeScript、Vite
+- Tailwind CSS、date-fns、lucide-react
+- Supabase Auth、PostgreSQL、Row Level Security、Database RPC
+- vite-plugin-pwa、Vitest
 
 ## 本地运行
 
+### 环境要求
+
+- Node.js（建议使用当前 LTS 版本）
+- npm
+- 一个 Supabase 项目
+
+### 安装依赖
+
 ```bash
+git clone https://github.com/SuperGh2233/StudyBloom.git
+cd StudyBloom
 npm install
-npm run dev
 ```
 
-复制 `.env.example` 为 `.env.local`，填写：
+### 配置 Supabase
+
+复制环境变量模板：
+
+```bash
+cp .env.example .env.local
+```
+
+填写：
 
 ```env
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
 
-`.env.local` 已被 Git 忽略。只能使用 Supabase 的 Publishable/anon key，不能使用 `service_role` key。
+只能使用 Supabase Publishable / anon key。**不要在前端配置或提交 `service_role` key。**
 
-> Supabase 需要按文件名顺序执行 `migrations/` 中的全部迁移。已有 V0.8.1 项目升级时继续执行 `20260816000000_add_companionship.sql` 和 `20260817000000_optimize_companion_home.sql`；已有 V0.9.0 项目只需继续执行后者（步骤见 [supabase/README.md](supabase/README.md)）。
+数据库初始化和升级迁移请按照 [supabase/README.md](supabase/README.md) 的说明执行；生产环境部署前应先在独立 Supabase 项目验证迁移和 RLS 策略。
 
-常用检查命令：
+### 启动开发服务器
+
+```bash
+npm run dev
+```
+
+### 检查与构建
 
 ```bash
 npm run lint
@@ -71,103 +104,36 @@ npm run build
 npm run preview
 ```
 
-## 目录结构
+## 隐私与数据安全
+
+- 好友关系不会自动开放日历；所有者必须逐人授权。
+- 原始学习会话、任务标题、备注和精确定位不会通过搭子概要开放。
+- 精确位置只用于用户主动发起的签到/签退，不持续采集，也不向好友共享。
+- 关键计时状态由数据库 RPC 原子更新；客户端不能直接伪造核心计时记录。
+- RLS 是数据隔离边界，前端隐藏按钮不构成权限控制。
+
+浏览器定位可能被伪造，因此学习地点签到不是防作弊考勤系统。请在自己的 Supabase 项目中审查迁移、RLS 与 RPC 后再部署。
+
+## 项目结构
 
 ```text
 src/
-  components/       通用组件、PWA 提示和离线状态
-  features/
-    auth/           登录注册与路由守卫
-    calendar/       移动端与桌面端日历布局
-    tasks/          每日任务编辑、学习目标进度与任务学习详情
-    study/          学习页组件（计时、签到、任务选择、学习记录）
-    companionship/  搭子卡、共享数据缓存、共同绽放与双人周记
-    friends/         好友关系共享缓存
-  hooks/            月度计划、好友、学习会话与签到 Hooks
-  layouts/          登录后应用壳层（五列导航 + ActiveStudyBar）
-  pages/            登录、日历、好友、学习、统计、设置和重置密码页面
-  services/         Supabase 数据服务、备份和统计（含学习/签到/搭子服务）
-  types/            TypeScript 领域类型与 Database 类型
-  utils/            日期、错误处理、定位与学习时长工具
-  lib/              Supabase 客户端
-public/
-  pwa-icon.svg      可替换的品牌图标源文件
-  pwa-*.png         PWA 图标
+├── components/        # 通用组件、PWA 与离线状态
+├── features/
+│   ├── auth/          # 登录注册与路由守卫
+│   ├── calendar/      # 月历视图
+│   ├── tasks/         # 每日任务与学习目标
+│   ├── study/         # 计时、签到与学习记录
+│   ├── friends/       # 好友关系
+│   └── companionship/ # 搭子与共同学习摘要
+├── hooks/             # 领域状态与数据 Hooks
+├── pages/             # 页面
+├── services/          # Supabase 数据访问
+└── lib/               # Supabase 客户端
 supabase/
-  migrations/       按文件名顺序执行的迁移（含学习模块迁移）
+└── migrations/        # 数据库迁移
 ```
 
-## PWA 使用方式
+## License
 
-### iPhone Safari
-
-1. 使用 Safari 打开正式 HTTPS 域名。
-2. 点击底部分享按钮。
-3. 选择“添加到主屏幕”。
-4. 点击右上角“添加”。
-5. 从主屏幕打开 StudyBloom，即可使用 standalone 独立窗口。
-
-微信、QQ 等内置浏览器不能直接完成 iPhone 安装，请选择“在 Safari 中打开”。安装提示会在关闭后保留七天，不会每次打扰。
-
-### Android Chrome
-
-浏览器支持原生安装提示时，页面会显示“立即安装”；也可以通过浏览器菜单选择“添加到主屏幕”。
-
-### 更新和离线
-
-- VitePWA 使用 `registerType: "prompt"`，检测到新版本后由用户选择“立即更新”或“稍后”。
-- Service Worker 只预缓存 HTML、JavaScript、CSS、图标等静态资源。
-- Supabase Auth、REST、Storage、Functions 和业务数据请求不会被缓存，也不会写入 Service Worker。
-- 断网时显示中文状态条；应用壳仍可从缓存打开。新增、编辑、删除任务及学习计时、签到、签退均需恢复网络后操作，不伪造离线保存成功。
-
-## V0.8.0 快速开始与邀请
-
-- **今日学习入口**：存在活动会话时继续原会话；没有活动会话时选择今天排序最前的未完成任务。系统优先使用最近保存的学习模式，没有偏好时使用 25 分钟专注、5 分钟休息的默认番茄设置。开始操作带单次请求锁，数据库冲突时恢复已有会话，不创建重复记录。
-- **首次使用**：仅当账号没有任何任务、学习记录和活动会话时出现。用户可用英语、数学、专业课、政治模板或自定义内容创建第一项任务，再开始 25 分钟专注或自由计时。完成、稍后开始或主动关闭后不会在刷新时重复弹出；界面状态保存在带版本号的本地存储中，真实学习数据仍以 Supabase 为准。
-- **渐进式推荐**：完成有效学习后推荐每日目标，累计三个有效学习日后才推荐学习地点，首次完成全天任务后推荐邀请搭子。每次只出现一项，关闭后七天内不再出现，也不会自动请求定位。
-- **好友邀请链接**：好友页可通过系统分享面板发送 `/friends?invite=BLOOM-XXXXXX` 链接，不支持系统分享时复制链接。登录前会暂存邀请码，登录后恢复到确认页面；打开链接不会自动发送申请，也不会自动开放日历。
-
-## Supabase 数据库
-
-数据库脚本位于 `supabase/schema.sql`，迁移位于 `supabase/migrations/`。核心表为 `plan_days` 和 `tasks`，所有策略只允许用户访问自己的数据。
-
-学习模块由 `20260811000000_add_attendance_and_study_mode.sql` 引入，后续迁移依次完成数据加固、任务学习目标、每日目标，以及 V0.7.0 的考研倒计时和私人好友备注：
-
-| 表 | 作用 | 关键规则 |
-| --- | --- | --- |
-| `study_locations` | 学习地点（名称/中心坐标/半径/启用/默认） | 半径 100–1000 米；停用不删除 |
-| `attendance_records` | 地点签到/签退 | 每用户最多一条未签退记录；异常结束 `manual_closed` |
-| `study_sessions` | 学习会话（自由/番茄） | 每用户最多一个未完成会话；任务删除后保留名称快照 |
-| `study_session_segments` | 计时片段（时长唯一事实来源） | 休息不产生片段；记录番茄轮次和实际完成时间 |
-| `study_preferences` | 番茄偏好、每日目标与倒计时跨设备同步 | 主键为 `user_id`；倒计时默认关闭且日期由用户设置 |
-
-所有状态切换通过数据库 RPC 原子完成（签到/签退、开始/暂停/继续/结束、番茄同步与阶段切换）。浏览器对签到、会话和计时片段只有本人只读权限，不能直接伪造写入；`anon` 无表权限也无函数执行权限。执行步骤与验证方法见 [supabase/README.md](supabase/README.md)。
-
-好友系统由迁移 `20260805100000_add_friend_system.sql` 引入，新增三张表：
-
-| 表 | 作用 | 关键规则 |
-| --- | --- | --- |
-| `profiles` | 昵称、StudyBloom ID（`friend_code`）、是否接收申请 | 注册时触发器自动建档；`BLOOM-XXXXXX` 随机生成 |
-| `friendships` | 好友申请与关系（pending/accepted/rejected/blocked） | 只有双方可见；同一对用户同时只存在一条有效关系 |
-| `calendar_shares` | 日历查看授权（owner → viewer） | 只有 owner 可管理；只能授权给已接受的好友 |
-| `friend_notes` | 每位用户自己的好友备注 | 仅备注人可读写；最多 30 字；好友关系结束时清理 |
-| `companion_preferences` | 首页搭子与使用方式 | 仅本人可读写；首页搭子必须是已接受好友 |
-| `companion_settings` | 逐位搭子的分享范围 | 默认 `none`；所有者可修改，对方只能读取与自己相关的授权 |
-| `companion_encouragements` | 每天一朵花 | 服务端按中国日期写入；同一发送者、接收者和日期唯一 |
-
-权限模型（全部由 RLS 保证，前端隐藏只是体验）：
-
-- 好友对 `tasks` / `plan_days` **只有 SELECT**：当且仅当 `calendar_shares.can_view = true` 时可见；写入策略仍然限定 `auth.uid() = user_id`，好友无法新增、修改、删除或勾选对方任务。
-- 默认不共享：成为好友后不会自动开放日历，必须由所有者在“设置 → 好友与隐私”中逐个开启。
-- 删除好友、拉黑或关闭开关都会立即让对方失去访问（删除/拉黑时由数据库触发器清理授权）。
-- 搭子概要只通过受保护的聚合函数返回。首页使用 `get_companion_home_state` 一次获取卡片所需的最小字段，双人周记仍按需读取；好友不会获得 `study_sessions` 或 `study_session_segments` 的读取权限，`bloom_only` 只返回是否达到有效学习条件，`summary` 才返回整数分钟和任务完成数量。
-
-执行迁移与测试方法见 [supabase/README.md](supabase/README.md)，三账号安全测试清单见 [TESTING.md](TESTING.md)。
-
-## 部署
-
-项目适合部署到 Vercel。完整配置和 PWA 验证步骤见 [DEPLOYMENT.md](DEPLOYMENT.md)，人工测试清单见 [TESTING.md](TESTING.md)。
-
-## 下一阶段
-
-先用真实用户验证邀请完成率、72 小时内首次共同绽放、首周共同学习天数和分享权限撤销体验，再决定是否增加可选通知或更多共同回顾。本版本不开发聊天、排行榜、实时在线、定位共享、催促提醒、学习记录搜索筛选或原生 iOS 灵动岛功能。
+请以仓库中的 LICENSE 文件为准。
