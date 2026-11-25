@@ -106,7 +106,7 @@ npm run build
 npm run preview
 ```
 
-2026-11-25 GitHub Actions 验证：ESLint 通过，**26 个测试文件 / 97 项测试通过**，Vite 生产构建通过。`npm audit --omit=dev` 未发现生产依赖漏洞；完整开发依赖树仍有 22 项安全公告（7 high、14 moderate、1 low），后续升级需单独评估兼容性。
+2026-11-25 GitHub Actions 验证：ESLint 通过，**26 个测试文件 / 97 项测试通过**，Vite 生产构建通过。`npm audit --omit=dev` 未发现生产依赖漏洞；完整开发依赖树仅剩 4 项 Moderate 安全公告，均来自 PWA / Workbox 构建工具链，未发现 High 或 Critical；这些公告需要对 `vite-plugin-pwa` 做兼容性评估后再处理。
 
 ## 隐私与数据安全
 
