@@ -7,7 +7,7 @@
 <p align="center">
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
-  <img alt="Vite" src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white">
   <img alt="Supabase" src="https://img.shields.io/badge/Backend-Supabase-3FCF8E?logo=supabase&logoColor=white">
   <img alt="PWA" src="https://img.shields.io/badge/App-PWA-5A0FC8">
 </p>
@@ -58,7 +58,7 @@ flowchart TD
 
 ### 环境要求
 
-- Node.js（建议使用当前 LTS 版本）
+- Node.js 22.22.2 或更高版本（满足当前 Vitest / jsdom 工具链要求）
 - npm
 - 一个 Supabase 项目
 
@@ -136,4 +136,4 @@ supabase/
 
 ## License
 
-请以仓库中的 LICENSE 文件为准。
+当前仓库尚未提供 `LICENSE` 文件。除非另有书面授权，公开仓库不代表授予复制、修改、再分发或商用许可。
