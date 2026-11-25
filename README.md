@@ -7,10 +7,12 @@
 <p align="center">
   <img alt="React" src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white">
-  <img alt="Vite" src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white">
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white">
   <img alt="Supabase" src="https://img.shields.io/badge/Backend-Supabase-3FCF8E?logo=supabase&logoColor=white">
   <img alt="PWA" src="https://img.shields.io/badge/App-PWA-5A0FC8">
 </p>
+
+[![CI](https://github.com/SuperGh2233/StudyBloom/actions/workflows/ci.yml/badge.svg)](https://github.com/SuperGh2233/StudyBloom/actions/workflows/ci.yml)
 
 StudyBloom 是一个面向个人与学习搭子的学习计划日历。它把每日任务、专注计时、学习记录、目标统计和好友陪伴整合在一起，并通过 Supabase 在设备间同步数据。
 
@@ -58,7 +60,7 @@ flowchart TD
 
 ### 环境要求
 
-- Node.js（建议使用当前 LTS 版本）
+- Node.js 22.22.2 或更高版本（满足当前 Vitest / jsdom 工具链要求）
 - npm
 - 一个 Supabase 项目
 
@@ -104,6 +106,8 @@ npm run build
 npm run preview
 ```
 
+2026-11-25 GitHub Actions 验证：ESLint 通过，**26 个测试文件 / 97 项测试通过**，Vite 生产构建通过。`npm audit --omit=dev` 未发现生产依赖漏洞；完整开发依赖树仅剩 4 项 Moderate 安全公告，均来自 PWA / Workbox 构建工具链，未发现 High 或 Critical；这些公告需要对 `vite-plugin-pwa` 做兼容性评估后再处理。
+
 ## 隐私与数据安全
 
 - 好友关系不会自动开放日历；所有者必须逐人授权。
@@ -136,4 +140,4 @@ supabase/
 
 ## License
 
-请以仓库中的 LICENSE 文件为准。
+当前仓库尚未提供 `LICENSE` 文件。除非另有书面授权，公开仓库不代表授予复制、修改、再分发或商用许可。
