@@ -12,6 +12,8 @@
   <img alt="PWA" src="https://img.shields.io/badge/App-PWA-5A0FC8">
 </p>
 
+[![CI](https://github.com/SuperGh2233/StudyBloom/actions/workflows/ci.yml/badge.svg)](https://github.com/SuperGh2233/StudyBloom/actions/workflows/ci.yml)
+
 StudyBloom 是一个面向个人与学习搭子的学习计划日历。它把每日任务、专注计时、学习记录、目标统计和好友陪伴整合在一起，并通过 Supabase 在设备间同步数据。
 
 ## 功能一览
@@ -103,6 +105,8 @@ npm run test
 npm run build
 npm run preview
 ```
+
+2026-11-25 GitHub Actions 验证：ESLint 通过，**26 个测试文件 / 97 项测试通过**，Vite 生产构建通过。`npm audit --omit=dev` 未发现生产依赖漏洞；完整开发依赖树仍有 22 项安全公告（7 high、14 moderate、1 low），后续升级需单独评估兼容性。
 
 ## 隐私与数据安全
 
